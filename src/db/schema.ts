@@ -1,0 +1,126 @@
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+
+/** The four friends in the pod. Seeded once; not user-created. */
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+/**
+ * One row per distinct Scryfall printing we've ever seen, across everyone's
+ * collections. Acts as a metadata cache so re-imports of known cards never hit
+ * the Scryfall API. Matching happens on `normalized_name`, not on this row.
+ */
+export const cards = pgTable(
+  "cards",
+  {
+    id: serial("id").primaryKey(),
+    scryfallId: text("scryfall_id").notNull().unique(),
+    name: text("name").notNull(),
+    /** Shared normalizeName() output — the only thing the matcher compares. */
+    normalizedName: text("normalized_name").notNull(),
+    setCode: text("set_code"),
+    collectorNumber: text("collector_number"),
+    imageUri: text("image_uri"),
+    manaCost: text("mana_cost"),
+    /** Converted mana cost / mana value, from Scryfall. Powers matcher sort. */
+    cmc: numeric("cmc"),
+    typeLine: text("type_line"),
+    /** Stored as numeric to avoid float drift; nullable (some cards lack a price). */
+    pricesUsd: numeric("prices_usd"),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // pg_trgm GIN index powers fuzzy ILIKE search in the global "who owns X" feature.
+    index("cards_normalized_name_trgm")
+      .using("gin", sql`${t.normalizedName} gin_trgm_ops`),
+  ],
+);
+
+/**
+ * A user owns N copies of a specific printing. Upload fully replaces a user's
+ * rows (full re-sync). Duplicate CSV rows (same scryfall_id + foil) are merged
+ * by summing quantity before insert.
+ */
+export const collectionItems = pgTable(
+  "collection_items",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: integer("card_id")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull().default(1),
+    foil: boolean("foil").notNull().default(false),
+    condition: text("condition"),
+    source: text("source").notNull().default("manabox"),
+    importedAt: timestamp("imported_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("collection_items_user_idx").on(t.userId),
+    index("collection_items_card_idx").on(t.cardId),
+    // one row per (user, printing, foil) — enforces the merge-on-import invariant
+    uniqueIndex("collection_items_user_card_foil_uniq").on(
+      t.userId,
+      t.cardId,
+      t.foil,
+    ),
+  ],
+);
+
+export const decks = pgTable("decks", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  ownerUserId: integer("owner_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  source: text("source", { enum: ["paste", "archidekt", "moxfield_text"] })
+    .notNull()
+    .default("paste"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * Cards in a deck. Stored by name (+ normalized key) rather than card_id,
+ * because a decklist references a card abstractly — any printing counts.
+ */
+export const deckCards = pgTable(
+  "deck_cards",
+  {
+    id: serial("id").primaryKey(),
+    deckId: integer("deck_id")
+      .notNull()
+      .references(() => decks.id, { onDelete: "cascade" }),
+    cardName: text("card_name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    isCommander: boolean("is_commander").notNull().default(false),
+  },
+  (t) => [index("deck_cards_deck_idx").on(t.deckId)],
+);
+
+export type User = typeof users.$inferSelect;
+export type Card = typeof cards.$inferSelect;
+export type NewCard = typeof cards.$inferInsert;
+export type CollectionItem = typeof collectionItems.$inferSelect;
+export type Deck = typeof decks.$inferSelect;
+export type DeckCard = typeof deckCards.$inferSelect;
