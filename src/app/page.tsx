@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listDecks } from "@/lib/decks";
+import { ColorDots } from "@/components/mana";
 
 export default async function HomePage() {
   await requireUser();
@@ -41,14 +42,20 @@ export default async function HomePage() {
                 href={`/decks/${d.id}`}
                 className="block rounded-xl border border-border bg-surface p-4 transition hover:border-accent/60"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <h2 className="font-medium">{d.name}</h2>
-                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
-                    {d.source}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {d.colors && <ColorDots identity={d.colors} />}
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
+                      {d.source}
+                    </span>
+                  </div>
                 </div>
+                {d.commander && (
+                  <p className="mt-1 truncate text-sm text-accent">{d.commander}</p>
+                )}
                 <p className="mt-1 text-xs text-muted">
-                  by {d.ownerName} ·{" "}
+                  {d.cardCount} cards · by {d.ownerName} ·{" "}
                   {new Date(d.createdAt).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",

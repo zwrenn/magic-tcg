@@ -31,12 +31,15 @@ export const cards = pgTable(
     /** Shared normalizeName() output — the only thing the matcher compares. */
     normalizedName: text("normalized_name").notNull(),
     setCode: text("set_code"),
+    setName: text("set_name"),
     collectorNumber: text("collector_number"),
     imageUri: text("image_uri"),
     manaCost: text("mana_cost"),
     /** Converted mana cost / mana value, from Scryfall. Powers matcher sort. */
     cmc: numeric("cmc"),
     typeLine: text("type_line"),
+    /** Comma-joined WUBRG color identity (e.g. "U,B"; "" = colorless). For organizing. */
+    colorIdentity: text("color_identity"),
     /** Stored as numeric to avoid float drift; nullable (some cards lack a price). */
     pricesUsd: numeric("prices_usd"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -91,7 +94,9 @@ export const decks = pgTable("decks", {
   ownerUserId: integer("owner_user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  source: text("source", { enum: ["paste", "archidekt", "moxfield_text"] })
+  source: text("source", {
+    enum: ["paste", "archidekt", "moxfield_text", "edhrec"],
+  })
     .notNull()
     .default("paste"),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -116,6 +121,29 @@ export const deckCards = pgTable(
     isCommander: boolean("is_commander").notNull().default(false),
   },
   (t) => [index("deck_cards_deck_idx").on(t.deckId)],
+);
+
+/**
+ * A user's favorited cards. Keyed by normalized_name (the card concept, not a
+ * printing) so a star follows the card across every printing and shows up in
+ * search too.
+ */
+export const favorites = pgTable(
+  "favorites",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    normalizedName: text("normalized_name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("favorites_user_name_uniq").on(t.userId, t.normalizedName),
+    index("favorites_user_idx").on(t.userId),
+  ],
 );
 
 export type User = typeof users.$inferSelect;

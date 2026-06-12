@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CardThumb } from "@/components/card-thumb";
+import { CardZoomButton } from "@/components/card-zoom";
+import { ManaCost, ColorDots } from "@/components/mana";
 import { TYPE_BUCKETS, typeBucket, type TypeBucket } from "@/lib/card-types";
 import type { DeckCardMatch } from "@/lib/matcher";
 
@@ -108,6 +109,19 @@ export function MatcherView({
             {summary.missing} missing.
           </span>
         </p>
+        {/* Coverage bar */}
+        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+          <div
+            className="h-full rounded-full bg-good transition-all"
+            style={{
+              width: `${summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}%`,
+            }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-muted">
+          {summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}% of
+          the deck is covered by the pod
+        </p>
       </div>
 
       {/* Controls */}
@@ -174,17 +188,43 @@ export function MatcherView({
                   key={r.card.normalizedName}
                   className="flex items-center gap-3 px-3 py-2"
                 >
-                  <CardThumb name={r.card.name} image={r.card.image} />
+                  <CardZoomButton
+                    name={r.card.name}
+                    image={r.card.image}
+                    className="shrink-0"
+                  >
+                    {r.card.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={r.card.image}
+                        alt={r.card.name}
+                        loading="lazy"
+                        className="h-12 w-9 rounded-[3px] border border-border object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-12 w-9 place-items-center rounded-[3px] border border-border bg-surface-2 text-[8px] text-muted">
+                        no img
+                      </span>
+                    )}
+                  </CardZoomButton>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium">{r.card.name}</span>
+                      <CardZoomButton
+                        name={r.card.name}
+                        image={r.card.image}
+                        className="truncate text-left font-medium hover:text-accent"
+                      >
+                        {r.card.name}
+                      </CardZoomButton>
                       {r.card.isCommander && (
                         <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
                           CMDR
                         </span>
                       )}
+                      {r.card.manaCost && <ManaCost cost={r.card.manaCost} />}
                     </div>
-                    <div className="text-xs text-muted">
+                    <div className="flex items-center gap-1.5 text-xs text-muted">
+                      <ColorDots identity={r.card.colorIdentity} />
                       need {r.card.needed}
                       {r.card.typeLine ? ` · ${r.card.typeLine}` : ""}
                     </div>

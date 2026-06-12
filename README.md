@@ -54,6 +54,13 @@ pnpm db:migrate    # creates tables + pg_trgm index
 pnpm db:seed       # inserts the four pod members
 ```
 
+If you imported collections before the color-identity column existed, backfill it
+once (safe to re-run; only touches rows missing the data):
+
+```bash
+pnpm db:backfill   # fetches color identity for existing cards from Scryfall
+```
+
 (`pnpm db:generate` regenerates migrations if you change `src/db/schema.ts`.
 If you'd rather skip migration files entirely during early dev, `pnpm db:push`
 syncs the schema directly.)

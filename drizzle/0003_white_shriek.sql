@@ -1,0 +1,1 @@
+ALTER TABLE "cards" ADD COLUMN "set_name" text;

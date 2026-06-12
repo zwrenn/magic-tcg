@@ -13,6 +13,34 @@ export const TYPE_BUCKETS = [
 
 export type TypeBucket = (typeof TYPE_BUCKETS)[number];
 
+export const COLOR_BUCKETS = [
+  "White",
+  "Blue",
+  "Black",
+  "Red",
+  "Green",
+  "Multicolor",
+  "Colorless",
+] as const;
+
+export type ColorBucket = (typeof COLOR_BUCKETS)[number];
+
+const COLOR_NAME: Record<string, ColorBucket> = {
+  W: "White",
+  U: "Blue",
+  B: "Black",
+  R: "Red",
+  G: "Green",
+};
+
+/** Bucket a comma-joined WUBRG color identity ("U,B"; "" = colorless). */
+export function colorBucket(colorIdentity: string | null): ColorBucket {
+  const parts = (colorIdentity ?? "").split(",").filter(Boolean);
+  if (parts.length === 0) return "Colorless";
+  if (parts.length > 1) return "Multicolor";
+  return COLOR_NAME[parts[0]] ?? "Colorless";
+}
+
 export function typeBucket(typeLine: string | null): TypeBucket {
   if (!typeLine) return "Other";
   const t = typeLine.toLowerCase();

@@ -58,10 +58,12 @@ type ScryfallCard = {
   id: string;
   name: string;
   set?: string;
+  set_name?: string;
   collector_number?: string;
   mana_cost?: string;
   cmc?: number;
   type_line?: string;
+  color_identity?: string[];
   image_uris?: { normal?: string; small?: string };
   card_faces?: Array<{ image_uris?: { normal?: string; small?: string } }>;
   prices?: { usd?: string | null };
@@ -86,11 +88,13 @@ function toNewCard(c: ScryfallCard): NewCard {
     name: c.name,
     normalizedName: normalizeName(c.name),
     setCode: c.set ?? null,
+    setName: c.set_name ?? null,
     collectorNumber: c.collector_number ?? null,
     imageUri: imageOf(c),
     manaCost: c.mana_cost ?? null,
     cmc: c.cmc != null ? String(c.cmc) : null,
     typeLine: c.type_line ?? null,
+    colorIdentity: c.color_identity ? c.color_identity.join(",") : null,
     pricesUsd: c.prices?.usd ?? null,
   };
 }
@@ -132,6 +136,55 @@ function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+/** Card-name autocomplete for the manual "add a card" flow (all cards). */
+export async function suggestCardNames(q: string): Promise<string[]> {
+  const term = q.trim();
+  if (term.length < 2) return [];
+  await bucket.take();
+  const res = await fetch(
+    `${SCRYFALL_BASE}/cards/autocomplete?q=${encodeURIComponent(term)}`,
+    { headers: HEADERS, cache: "no-store" },
+  );
+  if (!res.ok) return [];
+  const json = (await res.json()) as { data?: string[] };
+  return (json.data ?? []).slice(0, 12);
+}
+
+export type Printing = {
+  scryfallId: string;
+  set: string;
+  setName: string;
+  collectorNumber: string;
+  image: string | null;
+  priceUsd: string | null;
+};
+
+/** Every printing of an exact card name, newest first — for the printing picker. */
+export async function getCardPrintings(name: string): Promise<Printing[]> {
+  const n = name.trim();
+  if (!n) return [];
+  await bucket.take();
+  const url =
+    `${SCRYFALL_BASE}/cards/search?` +
+    new URLSearchParams({
+      q: `!"${n}"`, // exact name match
+      unique: "prints",
+      order: "released",
+      dir: "desc",
+    }).toString();
+  const res = await fetch(url, { headers: HEADERS, cache: "no-store" });
+  if (!res.ok) return []; // 404 = unknown name
+  const json = (await res.json()) as { data?: ScryfallCard[] };
+  return (json.data ?? []).slice(0, 80).map((c) => ({
+    scryfallId: c.id,
+    set: (c.set ?? "").toUpperCase(),
+    setName: c.set_name ?? "",
+    collectorNumber: c.collector_number ?? "",
+    image: imageOf(c),
+    priceUsd: c.prices?.usd ?? null,
+  }));
 }
 
 /**
@@ -178,6 +231,28 @@ export async function ensureCardsByScryfallId(
     );
   }
   return new Map(all.map((c) => [c.scryfallId, c]));
+}
+
+/**
+ * Commander name suggestions for the deck-builder typeahead. Filtered to cards
+ * that can actually be a commander, ranked by EDHREC popularity. Server-side so
+ * the client never touches Scryfall directly.
+ */
+export async function suggestCommanders(q: string): Promise<string[]> {
+  const term = q.trim();
+  if (term.length < 2) return [];
+  await bucket.take();
+  const url =
+    `${SCRYFALL_BASE}/cards/search?` +
+    new URLSearchParams({
+      q: `is:commander ${term}`,
+      order: "edhrec",
+      unique: "cards",
+    }).toString();
+  const res = await fetch(url, { headers: HEADERS, cache: "no-store" });
+  if (!res.ok) return []; // 404 = no matches yet (still typing); treat as empty
+  const json = (await res.json()) as { data?: ScryfallCard[] };
+  return (json.data ?? []).slice(0, 10).map((c) => c.name);
 }
 
 /**

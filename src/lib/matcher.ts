@@ -12,6 +12,7 @@ export type DeckCardMatch = {
   typeLine: string | null;
   cmc: number | null;
   manaCost: string | null;
+  colorIdentity: string | null;
   needed: number;
   isCommander: boolean;
   /** Every pod member who owns at least one copy (any printing). */
@@ -66,6 +67,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       typeLine: schema.cards.typeLine,
       cmc: schema.cards.cmc,
       manaCost: schema.cards.manaCost,
+      colorIdentity: schema.cards.colorIdentity,
     })
     .from(schema.cards)
     .where(inArray(schema.cards.normalizedName, names))
@@ -88,6 +90,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       typeLine: m?.typeLine ?? null,
       cmc: m?.cmc != null ? Number(m.cmc) : null,
       manaCost: m?.manaCost ?? null,
+      colorIdentity: m?.colorIdentity ?? null,
       needed: dc.quantity,
       isCommander: dc.isCommander,
       owners,

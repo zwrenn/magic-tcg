@@ -4,19 +4,25 @@ import { useActionState, useState } from "react";
 import {
   createDeckFromPaste,
   createDeckFromArchidekt,
+  createDeckFromCommander,
   type ActionState,
 } from "../actions";
+import { CommanderInput } from "./commander-input";
 
 const initial: ActionState = {};
 
 export function NewDeckForm() {
-  const [tab, setTab] = useState<"paste" | "archidekt">("paste");
+  const [tab, setTab] = useState<"paste" | "archidekt" | "commander">("paste");
   const [pasteState, pasteAction, pastePending] = useActionState(
     createDeckFromPaste,
     initial,
   );
   const [archState, archAction, archPending] = useActionState(
     createDeckFromArchidekt,
+    initial,
+  );
+  const [cmdrState, cmdrAction, cmdrPending] = useActionState(
+    createDeckFromCommander,
     initial,
   );
 
@@ -28,6 +34,9 @@ export function NewDeckForm() {
         </TabButton>
         <TabButton active={tab === "archidekt"} onClick={() => setTab("archidekt")}>
           Archidekt URL
+        </TabButton>
+        <TabButton active={tab === "commander"} onClick={() => setTab("commander")}>
+          Commander
         </TabButton>
       </div>
 
@@ -61,7 +70,7 @@ export function NewDeckForm() {
             {pastePending ? "Saving…" : "Create deck"}
           </button>
         </form>
-      ) : (
+      ) : tab === "archidekt" ? (
         <form action={archAction} className="space-y-3">
           <input
             name="url"
@@ -86,6 +95,29 @@ export function NewDeckForm() {
             className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {archPending ? "Fetching…" : "Import from Archidekt"}
+          </button>
+        </form>
+      ) : (
+        <form action={cmdrAction} className="space-y-3">
+          <CommanderInput />
+          <input
+            name="name"
+            placeholder="Deck name (optional)"
+            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
+          />
+          <p className="text-xs text-muted">
+            Pulls the ~100 cards most commonly run with this commander from{" "}
+            <strong>EDHREC</strong>, so you can see what the pod already owns
+            before building. Use the exact card name (front face for
+            double-faced commanders).
+          </p>
+          {cmdrState.error && <p className="text-sm text-bad">{cmdrState.error}</p>}
+          <button
+            type="submit"
+            disabled={cmdrPending}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {cmdrPending ? "Asking EDHREC…" : "Build from commander"}
           </button>
         </form>
       )}

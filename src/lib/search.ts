@@ -4,25 +4,37 @@ import { db, schema } from "@/db";
 import { normalizeName } from "./normalize";
 import type { OwnerHolding } from "./matcher";
 
-/** Distinct entries + total card count for a user's collection. */
+/** Distinct entries, total card count, and est. value for a user's collection. */
 export async function collectionTotals(
   userId: number,
-): Promise<{ distinct: number; total: number }> {
+): Promise<{ distinct: number; total: number; valueUsd: number }> {
   const [row] = await db
     .select({
       distinct: sql<number>`count(*)::int`,
       total: sql<number>`coalesce(sum(${schema.collectionItems.quantity}), 0)::int`,
+      valueUsd: sql<number>`coalesce(sum(${schema.collectionItems.quantity} * ${schema.cards.pricesUsd}), 0)::float`,
     })
     .from(schema.collectionItems)
+    .innerJoin(schema.cards, eq(schema.cards.id, schema.collectionItems.cardId))
     .where(eq(schema.collectionItems.userId, userId));
-  return { distinct: row?.distinct ?? 0, total: row?.total ?? 0 };
+  return {
+    distinct: row?.distinct ?? 0,
+    total: row?.total ?? 0,
+    valueUsd: row?.valueUsd ?? 0,
+  };
 }
 
 export type CollectionRow = {
   name: string;
+  normalizedName: string;
   image: string | null;
   typeLine: string | null;
   manaCost: string | null;
+  cmc: number | null;
+  colorIdentity: string | null;
+  setCode: string | null;
+  setName: string | null;
+  priceUsd: string | null;
   quantity: number;
   foil: boolean;
   condition: string | null;
@@ -42,12 +54,18 @@ export async function searchUserCollection(
       )
     : eq(schema.collectionItems.userId, userId);
 
-  return db
+  const rows = await db
     .select({
       name: schema.cards.name,
+      normalizedName: schema.cards.normalizedName,
       image: schema.cards.imageUri,
       typeLine: schema.cards.typeLine,
       manaCost: schema.cards.manaCost,
+      cmc: schema.cards.cmc,
+      colorIdentity: schema.cards.colorIdentity,
+      setCode: schema.cards.setCode,
+      setName: schema.cards.setName,
+      priceUsd: schema.cards.pricesUsd,
       quantity: schema.collectionItems.quantity,
       foil: schema.collectionItems.foil,
       condition: schema.collectionItems.condition,
@@ -57,6 +75,9 @@ export async function searchUserCollection(
     .where(where)
     .orderBy(schema.cards.name)
     .limit(limit);
+
+  // numeric columns come back as strings from the driver
+  return rows.map((r) => ({ ...r, cmc: r.cmc != null ? Number(r.cmc) : null }));
 }
 
 export type GlobalSearchResult = {

@@ -1,0 +1,37 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const NAV = [
+  { href: "/", label: "Decks" },
+  { href: "/search", label: "Search" },
+  { href: "/collection", label: "My Cards" },
+  { href: "/stats", label: "Stats" },
+  { href: "/import", label: "Import" },
+];
+
+export function Nav() {
+  const pathname = usePathname();
+  return (
+    <nav className="flex items-center gap-1 text-sm">
+      {NAV.map((n) => {
+        const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            aria-current={active ? "page" : undefined}
+            className={`rounded-md px-2.5 py-1.5 transition ${
+              active
+                ? "bg-surface text-foreground"
+                : "text-muted hover:bg-surface hover:text-foreground"
+            }`}
+          >
+            {n.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

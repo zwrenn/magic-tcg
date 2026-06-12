@@ -1,8 +1,13 @@
 import { requireUser } from "@/lib/auth";
 import { collectionTotals, searchUserCollection } from "@/lib/search";
-import { CardThumb } from "@/components/card-thumb";
+import { getFavorites } from "@/lib/favorites";
+import { CollectionView } from "./collection-view";
+import { AddCardPanel } from "./add-card-panel";
+import { SearchHotkey } from "@/components/search-hotkey";
 
-const LIMIT = 200;
+// High cap so color/type/set filtering works across the whole collection
+// (client-side). Covers any realistic personal collection.
+const LIMIT = 5000;
 
 export default async function CollectionPage({
   searchParams,
@@ -11,24 +16,40 @@ export default async function CollectionPage({
 }) {
   const user = await requireUser();
   const { q = "" } = await searchParams;
-  const [totals, rows] = await Promise.all([
+  const [totals, rows, favorites] = await Promise.all([
     collectionTotals(user.id),
     searchUserCollection(user.id, q, LIMIT),
+    getFavorites(user.id),
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{user.name}&apos;s cards</h1>
-      <p className="mt-1 text-sm text-muted">
-        {totals.distinct.toLocaleString()} distinct ·{" "}
-        {totals.total.toLocaleString()} total cards
-      </p>
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <SearchHotkey />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {user.name}&apos;s cards
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            {totals.distinct.toLocaleString()} distinct ·{" "}
+            {totals.total.toLocaleString()} total ·{" "}
+            <span className="text-foreground">
+              ~$
+              {totals.valueUsd.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              })}
+            </span>{" "}
+            est. value
+          </p>
+        </div>
+        <AddCardPanel />
+      </div>
 
       <form className="mt-5 flex gap-2">
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search your cards by name…"
+          placeholder="Search your cards by name…  (press / )"
           className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
@@ -47,33 +68,15 @@ export default async function CollectionPage({
       ) : rows.length === 0 ? (
         <p className="mt-8 text-sm text-muted">No cards match “{q}”.</p>
       ) : (
-        <>
-          {q && rows.length === LIMIT && (
-            <p className="mt-4 text-xs text-muted">
-              Showing first {LIMIT}. Refine your search to narrow it down.
-            </p>
-          )}
-          <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-            {rows.map((r, i) => (
-              <li key={`${r.name}-${r.foil}-${i}`} className="flex items-center gap-3 px-3 py-2">
-                <CardThumb name={r.name} image={r.image} />
-                <div className="min-w-0 flex-1">
-                  <span className="font-medium">{r.name}</span>
-                  {r.typeLine && (
-                    <div className="text-xs text-muted">{r.typeLine}</div>
-                  )}
-                </div>
-                <div className="text-right text-sm">
-                  <span className="font-medium">×{r.quantity}</span>
-                  {r.foil && <span className="ml-1 text-accent" title="foil">✦</span>}
-                  {r.condition && (
-                    <div className="text-[11px] text-muted">{r.condition}</div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <div className="mt-5">
+          <CollectionView
+            rows={rows}
+            total={totals.distinct}
+            limit={LIMIT}
+            query={q}
+            favorites={[...favorites]}
+          />
+        </div>
       )}
     </main>
   );
