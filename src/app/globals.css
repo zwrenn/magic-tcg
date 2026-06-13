@@ -74,6 +74,15 @@ h3 {
   color: var(--accent-fg);
 }
 
+/* Hide scrollbar but keep scrollability (mobile nav). */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ---------- Reusable component classes ---------- */
 
 /* Uppercase mono micro-label used for section headers / chrome. */

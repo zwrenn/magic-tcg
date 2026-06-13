@@ -2,6 +2,7 @@ import "server-only";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getDeck } from "./decks";
+import { isBasicLand } from "./card-types";
 
 export type OwnerHolding = { name: string; qty: number; foil: boolean };
 
@@ -13,6 +14,7 @@ export type DeckCardMatch = {
   cmc: number | null;
   manaCost: string | null;
   colorIdentity: string | null;
+  priceUsd: string | null;
   needed: number;
   isCommander: boolean;
   /** Every pod member who owns at least one copy (any printing). */
@@ -33,7 +35,9 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
   const deck = await getDeck(deckId);
   if (!deck) return null;
 
-  const names = [...new Set(deck.cards.map((c) => c.normalizedName))];
+  // Basic lands aren't meaningful "needs" — drop them from the match.
+  const deckCards = deck.cards.filter((c) => !isBasicLand(c.normalizedName));
+  const names = [...new Set(deckCards.map((c) => c.normalizedName))];
   if (names.length === 0) return { deck, cards: [] };
 
   // Per-card, per-owner owned quantity across all printings.
@@ -68,6 +72,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       cmc: schema.cards.cmc,
       manaCost: schema.cards.manaCost,
       colorIdentity: schema.cards.colorIdentity,
+      priceUsd: schema.cards.pricesUsd,
     })
     .from(schema.cards)
     .where(inArray(schema.cards.normalizedName, names))
@@ -78,7 +83,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
     );
   const metaByCard = new Map(meta.map((m) => [m.normalizedName, m]));
 
-  const cards: DeckCardMatch[] = deck.cards.map((dc) => {
+  const cards: DeckCardMatch[] = deckCards.map((dc) => {
     const m = metaByCard.get(dc.normalizedName);
     const owners = (ownersByCard.get(dc.normalizedName) ?? []).sort(
       (a, b) => b.qty - a.qty,
@@ -91,6 +96,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       cmc: m?.cmc != null ? Number(m.cmc) : null,
       manaCost: m?.manaCost ?? null,
       colorIdentity: m?.colorIdentity ?? null,
+      priceUsd: m?.priceUsd ?? null,
       needed: dc.quantity,
       isCommander: dc.isCommander,
       owners,

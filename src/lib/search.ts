@@ -25,6 +25,7 @@ export async function collectionTotals(
 }
 
 export type CollectionRow = {
+  id: number;
   name: string;
   normalizedName: string;
   image: string | null;
@@ -56,6 +57,7 @@ export async function searchUserCollection(
 
   const rows = await db
     .select({
+      id: schema.collectionItems.id,
       name: schema.cards.name,
       normalizedName: schema.cards.normalizedName,
       image: schema.cards.imageUri,

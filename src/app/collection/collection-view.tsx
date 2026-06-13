@@ -41,6 +41,28 @@ export function CollectionView({
   const [favOnly, setFavOnly] = useState(false);
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
+  // Local editable copy so qty changes / removals reflect instantly.
+  const [items, setItems] = useState<CollectionRow[]>(rows);
+
+  useEffect(() => setItems(rows), [rows]);
+
+  async function changeQty(itemId: number, quantity: number) {
+    setItems((prev) =>
+      quantity <= 0
+        ? prev.filter((r) => r.id !== itemId)
+        : prev.map((r) => (r.id === itemId ? { ...r, quantity } : r)),
+    );
+    if (quantity <= 0) setZoom(null);
+    try {
+      await fetch("/api/collection/item", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: itemId, quantity }),
+      });
+    } catch {
+      /* optimistic; a refresh will reconcile */
+    }
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem("pod_collection_view");
@@ -62,13 +84,13 @@ export function CollectionView({
 
   const decorated = useMemo(
     () =>
-      rows.map((r) => ({
+      items.map((r) => ({
         row: r,
         color: colorBucket(r.colorIdentity),
         type: typeBucket(r.typeLine),
         set: (r.setCode ?? "").toUpperCase(),
       })),
-    [rows],
+    [items],
   );
 
   // Sets you actually own, labelled with their full name, sorted alphabetically.
@@ -141,7 +163,7 @@ export function CollectionView({
     };
   }, [zoom, close, step]);
 
-  const truncated = rows.length >= limit && total > rows.length;
+  const truncated = items.length >= limit && total > items.length;
   const zoomed = zoom === null ? null : visible[zoom];
 
   return (
@@ -310,8 +332,34 @@ export function CollectionView({
                 className="text-lg"
               />
               <span>
-                {zoomed.name} · ×{zoomed.quantity}{zoomed.foil ? " (foil)" : ""}{zoomed.condition ? ` · ${zoomed.condition}` : ""}
+                {zoomed.name}{zoomed.foil ? " (foil)" : ""}{zoomed.condition ? ` · ${zoomed.condition}` : ""}
               </span>
+            </div>
+            {/* Quantity editor */}
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => changeQty(zoomed.id, zoomed.quantity - 1)}
+                className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-surface text-lg hover:border-accent/60"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="w-10 text-center font-mono text-lg font-semibold tabular-nums">
+                {zoomed.quantity}
+              </span>
+              <button
+                onClick={() => changeQty(zoomed.id, zoomed.quantity + 1)}
+                className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-surface text-lg hover:border-accent/60"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+              <button
+                onClick={() => changeQty(zoomed.id, 0)}
+                className="ml-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:border-bad/60 hover:text-bad"
+              >
+                Remove
+              </button>
             </div>
             <a
               href={`https://scryfall.com/search?q=${encodeURIComponent(`!"${zoomed.name}"`)}`}

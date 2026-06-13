@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { ParsedCard } from "./deck-parser";
 import { ensureCardsByName } from "./scryfall";
+import { isBasicLand } from "./card-types";
 
 export type DeckSource = "paste" | "archidekt" | "moxfield_text" | "edhrec";
 
@@ -122,6 +123,8 @@ export async function listDecks(): Promise<DeckSummary[]> {
 export type BuildableDeck = DeckSummary & {
   covered: number;
   missing: number;
+  /** Non-basic cards that count toward coverage. */
+  total: number;
   coveragePct: number;
 };
 
@@ -155,6 +158,7 @@ export async function getBuildableDecks(): Promise<BuildableDeck[]> {
 
   const agg = new Map<number, { covered: number; total: number }>();
   for (const dc of deckCardRows) {
+    if (isBasicLand(dc.normalizedName)) continue; // basics aren't "needs"
     const a = agg.get(dc.deckId) ?? { covered: 0, total: 0 };
     a.total += 1;
     if ((ownedMap.get(dc.normalizedName) ?? 0) >= dc.quantity) a.covered += 1;
@@ -163,12 +167,13 @@ export async function getBuildableDecks(): Promise<BuildableDeck[]> {
 
   return decks
     .map((d) => {
-      const a = agg.get(d.id) ?? { covered: 0, total: d.cardCount };
-      const total = a.total || d.cardCount;
+      const a = agg.get(d.id) ?? { covered: 0, total: 0 };
+      const total = a.total;
       const covered = a.covered;
       return {
         ...d,
         covered,
+        total,
         missing: total - covered,
         coveragePct: total ? Math.round((covered / total) * 100) : 0,
       };

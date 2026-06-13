@@ -15,7 +15,7 @@ const NAV = [
 export function Nav() {
   const pathname = usePathname();
   return (
-    <nav className="flex items-center gap-0.5 font-mono text-[11px] font-medium uppercase tracking-wider">
+    <nav className="flex w-max items-center gap-0.5 font-mono text-[11px] font-medium uppercase tracking-wider">
       {NAV.map((n) => {
         const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
         return (
@@ -23,7 +23,7 @@ export function Nav() {
             key={n.href}
             href={n.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-md px-2.5 py-1.5 transition ${
+            className={`shrink-0 rounded-md px-2.5 py-1.5 transition ${
               active
                 ? "bg-surface-2 text-accent"
                 : "text-muted hover:bg-surface hover:text-foreground"

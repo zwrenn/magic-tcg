@@ -1,7 +1,55 @@
 import "server-only";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { ensureCardsByScryfallId } from "./scryfall";
+import { ensureCardsByScryfallId, ensureCardsByName } from "./scryfall";
+
+/**
+ * Quick-add a card to a collection by NAME (any printing counts). Used by the
+ * one-click "Add to collection" buttons in search / the card zoom. Resolves a
+ * representative printing via the cache (or Scryfall) then increments.
+ */
+export async function addCardByName(
+  userId: number,
+  name: string,
+  opts: { quantity?: number; foil?: boolean } = {},
+): Promise<{ name: string; added: number } | null> {
+  const map = await ensureCardsByName([name]);
+  const card = [...map.values()][0];
+  if (!card) return null;
+  return addCardToCollection(userId, card.scryfallId, {
+    quantity: opts.quantity ?? 1,
+    foil: opts.foil ?? false,
+  });
+}
+
+/** Set a collection item's quantity (<=0 deletes it). Scoped to the user. */
+export async function setItemQuantity(
+  userId: number,
+  itemId: number,
+  quantity: number,
+): Promise<{ removed: boolean; quantity: number }> {
+  if (quantity <= 0) {
+    await db
+      .delete(schema.collectionItems)
+      .where(
+        and(
+          eq(schema.collectionItems.id, itemId),
+          eq(schema.collectionItems.userId, userId),
+        ),
+      );
+    return { removed: true, quantity: 0 };
+  }
+  await db
+    .update(schema.collectionItems)
+    .set({ quantity })
+    .where(
+      and(
+        eq(schema.collectionItems.id, itemId),
+        eq(schema.collectionItems.userId, userId),
+      ),
+    );
+  return { removed: false, quantity };
+}
 
 /** Wipe a user's entire collection. Returns how many rows were removed. */
 export async function clearCollection(userId: number): Promise<number> {

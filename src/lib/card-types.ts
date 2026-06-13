@@ -41,6 +41,29 @@ export function colorBucket(colorIdentity: string | null): ColorBucket {
   return COLOR_NAME[parts[0]] ?? "Colorless";
 }
 
+/**
+ * Basic lands — excluded from deck "needs", since every player has unlimited
+ * basics and nobody borrows them. Keyed by normalizeName output.
+ */
+const BASIC_LAND_NAMES = new Set([
+  "plains",
+  "island",
+  "swamp",
+  "mountain",
+  "forest",
+  "wastes",
+  "snow-covered plains",
+  "snow-covered island",
+  "snow-covered swamp",
+  "snow-covered mountain",
+  "snow-covered forest",
+  "snow-covered wastes",
+]);
+
+export function isBasicLand(normalizedName: string): boolean {
+  return BASIC_LAND_NAMES.has(normalizedName);
+}
+
 export function typeBucket(typeLine: string | null): TypeBucket {
   if (!typeLine) return "Other";
   const t = typeLine.toLowerCase();

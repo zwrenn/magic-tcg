@@ -80,7 +80,7 @@ function Section({
                 </div>
                 <p className="mt-0.5 text-xs text-muted">
                   {d.commander ? `${d.commander} · ` : ""}
-                  {d.covered}/{d.cardCount} cards
+                  {d.covered}/{d.total} non-basic cards
                   {d.missing > 0 && ` · ${d.missing} missing`}
                 </p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-2">

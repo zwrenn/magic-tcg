@@ -3,6 +3,7 @@ import { globalSearch } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
 import { CardZoomButton } from "@/components/card-zoom";
 import { FavoriteStar } from "@/components/favorite-star";
+import { QuickAddButton } from "@/components/quick-add-button";
 import { SearchHotkey } from "@/components/search-hotkey";
 
 export default async function SearchPage({
@@ -92,6 +93,7 @@ export default async function SearchPage({
                   ))
                 )}
               </div>
+              <QuickAddButton name={r.name} />
             </li>
           ))}
         </ul>
