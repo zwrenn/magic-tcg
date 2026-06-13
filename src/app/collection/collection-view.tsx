@@ -322,8 +322,16 @@ export function CollectionView({
           {zoom < visible.length - 1 && <ArrowButton side="right" onClick={(e) => { e.stopPropagation(); step(1); }} />}
           <div className="flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
             {zoomed.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={zoomed.image} alt={zoomed.name} className="max-h-[80vh] w-auto rounded-2xl border border-border shadow-2xl" />
+              <div
+                className={`relative overflow-hidden rounded-2xl shadow-2xl ${zoomed.foil ? "foil-frame" : ""}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={zoomed.image}
+                  alt={zoomed.name}
+                  className="block max-h-[80vh] w-auto rounded-2xl border border-border"
+                />
+              </div>
             ) : (
               <div className="rounded-2xl border border-border bg-surface p-8 text-center">{zoomed.name}</div>
             )}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono, Cinzel } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Cinzel, Cinzel_Decorative } from "next/font/google";
 import { Header } from "@/components/header";
 import { CardZoomProvider } from "@/components/card-zoom";
 import "./globals.css";
@@ -22,6 +22,12 @@ const cinzel = Cinzel({
   weight: ["500", "600", "700", "800"],
   display: "swap",
 });
+const cinzelDecorative = Cinzel_Decorative({
+  variable: "--font-ornate",
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "The Pod",
@@ -34,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plexMono.variable} ${cinzel.variable} h-full antialiased`}
+      className={`${inter.variable} ${plexMono.variable} ${cinzel.variable} ${cinzelDecorative.variable} h-full antialiased`}
     >
       <head>
         {/* Authentic MTG mana symbols (mana-font) + set symbols (keyrune) */}

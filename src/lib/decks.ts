@@ -54,6 +54,8 @@ export type DeckSummary = {
   ownerUserId: number;
   cardCount: number;
   commander: string | null;
+  /** Commander card image (front face), for deck tiles. */
+  commanderImage: string | null;
   /** Comma-joined WUBRG color identity of the whole deck. */
   colors: string;
 };
@@ -84,13 +86,25 @@ export async function listDecks(): Promise<DeckSummary[]> {
     .groupBy(schema.deckCards.deckId);
   const countByDeck = new Map(counts.map((c) => [c.deckId, c.cardCount]));
 
-  // Commander per deck (first flagged card).
+  // Commander per deck (first flagged card), with its image.
   const commanders = await db
-    .select({ deckId: schema.deckCards.deckId, cardName: schema.deckCards.cardName })
+    .select({
+      deckId: schema.deckCards.deckId,
+      cardName: schema.deckCards.cardName,
+      image: schema.cards.imageUri,
+    })
     .from(schema.deckCards)
+    .leftJoin(
+      schema.cards,
+      eq(schema.cards.normalizedName, schema.deckCards.normalizedName),
+    )
     .where(eq(schema.deckCards.isCommander, true));
   const cmdrByDeck = new Map<number, string>();
-  for (const c of commanders) if (!cmdrByDeck.has(c.deckId)) cmdrByDeck.set(c.deckId, c.cardName);
+  const cmdrImgByDeck = new Map<number, string>();
+  for (const c of commanders) {
+    if (!cmdrByDeck.has(c.deckId)) cmdrByDeck.set(c.deckId, c.cardName);
+    if (c.image && !cmdrImgByDeck.has(c.deckId)) cmdrImgByDeck.set(c.deckId, c.image);
+  }
 
   // Deck color identity: union of color letters across the deck's cards.
   const colorRows = await db
@@ -116,6 +130,7 @@ export async function listDecks(): Promise<DeckSummary[]> {
     ...d,
     cardCount: countByDeck.get(d.id) ?? 0,
     commander: cmdrByDeck.get(d.id) ?? null,
+    commanderImage: cmdrImgByDeck.get(d.id) ?? null,
     colors: WUBRG.filter((c) => colorsByDeck.get(d.id)?.has(c)).join(","),
   }));
 }

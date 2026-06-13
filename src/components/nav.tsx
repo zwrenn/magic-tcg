@@ -15,7 +15,7 @@ const NAV = [
 export function Nav() {
   const pathname = usePathname();
   return (
-    <nav className="flex w-max items-center gap-0.5 font-mono text-[11px] font-medium uppercase tracking-wider">
+    <nav className="flex w-max items-center gap-0.5 font-[family-name:var(--font-display)] text-xs font-semibold uppercase tracking-[0.14em]">
       {NAV.map((n) => {
         const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
         return (

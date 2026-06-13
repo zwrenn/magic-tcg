@@ -17,9 +17,7 @@ export async function Header() {
           aria-label="The Pod — home"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--accent)]" />
-          <span className="hidden font-[family-name:var(--font-display)] text-lg font-bold tracking-wide sm:inline">
-            The&nbsp;Pod
-          </span>
+          <span className="t-hero hidden text-lg sm:inline">The&nbsp;Pod</span>
         </Link>
         <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto">
           <Nav />
