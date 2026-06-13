@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Cinzel } from "next/font/google";
 import { Header } from "@/components/header";
 import { CardZoomProvider } from "@/components/card-zoom";
 import "./globals.css";
 
-// Tamber pairing: Inter for body, IBM Plex Mono for chrome / headings / labels.
+// Inter body · IBM Plex Mono chrome/labels · Cinzel fantasy serif for titles.
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -14,6 +14,12 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+const cinzel = Cinzel({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -28,8 +34,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${plexMono.variable} ${cinzel.variable} h-full antialiased`}
     >
+      <head>
+        {/* Authentic MTG mana / set symbols (mana-font, SIL/MIT) */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css"
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <CardZoomProvider>
           <Header />

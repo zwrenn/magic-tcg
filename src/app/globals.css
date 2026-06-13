@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* mana-font (authentic MTG mana symbols) is loaded via <link> in layout.tsx —
+   Tailwind v4 disallows external @import here. */
 
 /* ============================================================
    The Pod — Tamber-flavored design system.
@@ -41,6 +43,7 @@
   --color-bad: var(--bad);
   --font-sans: var(--font-sans), "Inter", system-ui, sans-serif;
   --font-mono: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: var(--font-display), "Cinzel", Georgia, serif;
 }
 
 html {
@@ -48,19 +51,46 @@ html {
 }
 
 body {
-  background: var(--background);
+  /* Subtle planar depth — a faint green aurora at the top fading to black,
+     so it reads less like a flat dashboard and more like a lit table. */
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(61, 241, 166, 0.08), transparent 55%),
+    radial-gradient(100% 60% at 50% 110%, rgba(126, 137, 255, 0.05), transparent 55%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Headings carry the Tamber mono identity. */
+/* Major titles use the Cinzel fantasy serif for that Magic / fantasy feel. */
 h1,
-h2,
+h2 {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
 h3 {
   font-family: var(--font-mono), ui-monospace, monospace;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   font-weight: 700;
+}
+
+/* The five-color pie as a thin accent bar / divider. */
+.wubrg-bar {
+  background: linear-gradient(
+    90deg,
+    #f5f0d8 0%,
+    #f5f0d8 20%,
+    #9ed0ec 20%,
+    #9ed0ec 40%,
+    #5a5550 40%,
+    #5a5550 60%,
+    #f0a18a 60%,
+    #f0a18a 80%,
+    #9bd3ae 80%,
+    #9bd3ae 100%
+  );
 }
 
 /* Thin dark scrollbars. */

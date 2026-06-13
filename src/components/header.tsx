@@ -13,10 +13,13 @@ export async function Header() {
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 font-mono text-base font-bold uppercase tracking-tight"
+          className="flex shrink-0 items-center gap-2"
+          aria-label="The Pod — home"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--accent)]" />
-          <span className="hidden sm:inline">The&nbsp;Pod</span>
+          <span className="hidden font-[family-name:var(--font-display)] text-lg font-bold tracking-wide sm:inline">
+            The&nbsp;Pod
+          </span>
         </Link>
         <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto">
           <Nav />
@@ -25,6 +28,8 @@ export async function Header() {
           <UserSwitch current={user.name} members={[...POD_MEMBERS]} />
         </div>
       </div>
+      {/* five-color pie accent */}
+      <div className="wubrg-bar h-[2px] w-full opacity-70" />
     </header>
   );
 }
