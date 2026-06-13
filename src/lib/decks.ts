@@ -119,6 +119,63 @@ export async function listDecks(): Promise<DeckSummary[]> {
   }));
 }
 
+export type BuildableDeck = DeckSummary & {
+  covered: number;
+  missing: number;
+  coveragePct: number;
+};
+
+/**
+ * Score every saved deck by how completely it can be built from the pod's
+ * COMBINED collections. A deck card counts as covered when the pod owns at
+ * least the needed quantity across everyone. Sorted most-complete first.
+ */
+export async function getBuildableDecks(): Promise<BuildableDeck[]> {
+  const decks = await listDecks();
+  if (decks.length === 0) return [];
+
+  // Pod-combined owned quantity per card (any printing), summed across members.
+  const owned = await db
+    .select({
+      normalizedName: schema.cards.normalizedName,
+      qty: sql<number>`sum(${schema.collectionItems.quantity})::int`,
+    })
+    .from(schema.collectionItems)
+    .innerJoin(schema.cards, eq(schema.cards.id, schema.collectionItems.cardId))
+    .groupBy(schema.cards.normalizedName);
+  const ownedMap = new Map(owned.map((o) => [o.normalizedName, o.qty]));
+
+  const deckCardRows = await db
+    .select({
+      deckId: schema.deckCards.deckId,
+      normalizedName: schema.deckCards.normalizedName,
+      quantity: schema.deckCards.quantity,
+    })
+    .from(schema.deckCards);
+
+  const agg = new Map<number, { covered: number; total: number }>();
+  for (const dc of deckCardRows) {
+    const a = agg.get(dc.deckId) ?? { covered: 0, total: 0 };
+    a.total += 1;
+    if ((ownedMap.get(dc.normalizedName) ?? 0) >= dc.quantity) a.covered += 1;
+    agg.set(dc.deckId, a);
+  }
+
+  return decks
+    .map((d) => {
+      const a = agg.get(d.id) ?? { covered: 0, total: d.cardCount };
+      const total = a.total || d.cardCount;
+      const covered = a.covered;
+      return {
+        ...d,
+        covered,
+        missing: total - covered,
+        coveragePct: total ? Math.round((covered / total) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.coveragePct - a.coveragePct || a.missing - b.missing);
+}
+
 export async function getDeck(deckId: number) {
   const [deck] = await db
     .select({

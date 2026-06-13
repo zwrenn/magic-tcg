@@ -18,7 +18,7 @@ export default async function HomePage() {
         </div>
         <Link
           href="/decks/new"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90"
         >
           + New deck
         </Link>
@@ -29,7 +29,7 @@ export default async function HomePage() {
           <p className="text-sm text-muted">No decks yet.</p>
           <Link
             href="/decks/new"
-            className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90"
           >
             Add your first deck
           </Link>

@@ -165,7 +165,7 @@ export function ImportClient() {
             <button
               onClick={commit}
               disabled={busy}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
             >
               Replace my collection
             </button>
@@ -223,7 +223,7 @@ export function ImportClient() {
           <div className="mt-4 flex gap-2">
             <a
               href="/collection"
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90"
             >
               View my cards
             </a>

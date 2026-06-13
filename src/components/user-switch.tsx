@@ -29,7 +29,7 @@ export function UserSwitch({
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm hover:border-accent/60"
       >
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-accent text-[11px] font-bold text-white">
+        <span className="grid h-5 w-5 place-items-center rounded-full bg-accent text-[11px] font-bold text-black">
           {current[0]}
         </span>
         <span className="font-medium">{current}</span>

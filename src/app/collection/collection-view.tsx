@@ -352,7 +352,7 @@ function Chip({ label, onClear }: { label: string; onClear: () => void }) {
 
 function Toggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`rounded-md px-3 py-1 font-medium transition ${active ? "bg-accent text-white" : "text-muted hover:text-foreground"}`}>
+    <button onClick={onClick} className={`rounded-md px-3 py-1 font-medium transition ${active ? "bg-accent text-black" : "text-muted hover:text-foreground"}`}>
       {children}
     </button>
   );

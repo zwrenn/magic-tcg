@@ -49,7 +49,7 @@ export function GateForm({ members, next }: { members: string[]; next: string })
             onClick={() => setName(m)}
             className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
               name === m
-                ? "border-accent bg-accent text-white"
+                ? "border-accent bg-accent text-black"
                 : "border-border bg-surface-2 text-foreground hover:border-accent/60"
             }`}
           >
@@ -75,7 +75,7 @@ export function GateForm({ members, next }: { members: string[]; next: string })
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
       >
         {busy ? "Entering…" : "Enter the pod"}
       </button>

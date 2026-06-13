@@ -277,7 +277,7 @@ export function AddCardPanel() {
             <button
               onClick={add}
               disabled={busy || !printId}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
             >
               {busy ? "Adding…" : "Add to my collection"}
             </button>

@@ -34,7 +34,7 @@ export default async function SearchPage({
           placeholder="e.g. Smothering Tithe"
           className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
         />
-        <button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+        <button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90">
           Search
         </button>
       </form>

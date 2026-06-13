@@ -65,7 +65,7 @@ export function NewDeckForm() {
           <button
             type="submit"
             disabled={pastePending}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
           >
             {pastePending ? "Saving…" : "Create deck"}
           </button>
@@ -92,7 +92,7 @@ export function NewDeckForm() {
           <button
             type="submit"
             disabled={archPending}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
           >
             {archPending ? "Fetching…" : "Import from Archidekt"}
           </button>
@@ -115,7 +115,7 @@ export function NewDeckForm() {
           <button
             type="submit"
             disabled={cmdrPending}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
           >
             {cmdrPending ? "Asking EDHREC…" : "Build from commander"}
           </button>
@@ -139,7 +139,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
-        active ? "bg-accent text-white" : "text-muted hover:text-foreground"
+        active ? "bg-accent text-black" : "text-muted hover:text-foreground"
       }`}
     >
       {children}
