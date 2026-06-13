@@ -64,6 +64,7 @@ type ScryfallCard = {
   cmc?: number;
   type_line?: string;
   color_identity?: string[];
+  rarity?: string;
   image_uris?: { normal?: string; small?: string };
   card_faces?: Array<{ image_uris?: { normal?: string; small?: string } }>;
   prices?: { usd?: string | null };
@@ -95,6 +96,7 @@ function toNewCard(c: ScryfallCard): NewCard {
     cmc: c.cmc != null ? String(c.cmc) : null,
     typeLine: c.type_line ?? null,
     colorIdentity: c.color_identity ? c.color_identity.join(",") : null,
+    rarity: c.rarity ?? null,
     pricesUsd: c.prices?.usd ?? null,
   };
 }

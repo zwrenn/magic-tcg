@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useCardZoom } from "@/components/card-zoom";
 import { ManaCost, ColorDots } from "@/components/mana";
+import { SetSymbol } from "@/components/set-symbol";
 import { TYPE_BUCKETS, typeBucket, type TypeBucket } from "@/lib/card-types";
 import type { DeckCardMatch } from "@/lib/matcher";
 
@@ -118,10 +119,27 @@ export function MatcherView({
 
   const label = (name: string) => (name === viewerName ? "you" : name);
 
+  // Deck color identity → a gradient accent on the summary panel.
+  const COLOR_HEX: Record<string, string> = {
+    W: "#f5f0d8", U: "#9ed0ec", B: "#5a5550", R: "#f0a18a", G: "#9bd3ae",
+  };
+  const deckColors = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of cards)
+      for (const x of (c.colorIdentity ?? "").split(",").filter(Boolean)) s.add(x);
+    return ["W", "U", "B", "R", "G"].filter((x) => s.has(x));
+  }, [cards]);
+  const colorGradient =
+    deckColors.length > 0
+      ? `linear-gradient(90deg, ${deckColors.map((c) => COLOR_HEX[c]).join(", ")})`
+      : "var(--border-strong)";
+
   return (
     <div className="space-y-5">
       {/* Summary */}
-      <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="h-1 w-full" style={{ background: colorGradient }} />
+        <div className="p-5">
         <p className="text-lg">
           <span className="font-semibold text-accent">{summary.covered}</span> of{" "}
           <span className="font-semibold">{summary.total}</span> cards are in the
@@ -156,6 +174,7 @@ export function MatcherView({
           {summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}% of
           the non-basic cards are covered by the pod · basic lands excluded
         </p>
+        </div>
       </div>
 
       {/* Controls */}
@@ -267,6 +286,7 @@ export function MatcherView({
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted">
                       <ColorDots identity={r.card.colorIdentity} />
+                      <SetSymbol setCode={r.card.setCode} rarity={r.card.rarity} className="text-sm" />
                       need {r.card.needed}
                       {r.card.typeLine ? ` · ${r.card.typeLine}` : ""}
                     </div>

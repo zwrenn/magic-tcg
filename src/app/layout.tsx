@@ -37,10 +37,14 @@ export default function RootLayout({
       className={`${inter.variable} ${plexMono.variable} ${cinzel.variable} h-full antialiased`}
     >
       <head>
-        {/* Authentic MTG mana / set symbols (mana-font, SIL/MIT) */}
+        {/* Authentic MTG mana symbols (mana-font) + set symbols (keyrune) */}
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css"
+        />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/keyrune@latest/css/keyrune.min.css"
         />
       </head>
       <body className="min-h-full flex flex-col">

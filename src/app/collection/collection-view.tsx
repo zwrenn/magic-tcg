@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CollectionRow } from "@/lib/search";
 import { FavoriteStar } from "@/components/favorite-star";
 import { ManaCost, ColorDots } from "@/components/mana";
+import { SetSymbol } from "@/components/set-symbol";
 import {
   COLOR_BUCKETS,
   TYPE_BUCKETS,
@@ -245,14 +246,15 @@ export function CollectionView({
           {visible.map((r, i) => (
             <li key={`${r.name}-${r.foil}-${i}`} className="group relative">
               <button onClick={() => setZoom(i)} title={r.name}
-                className="block w-full overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:border-accent/60">
+                className={`block w-full overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:border-accent/60 ${r.foil ? "foil-frame" : ""}`}>
                 {r.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={r.image} alt={r.name} loading="lazy" className="aspect-[488/680] w-full object-cover" />
                 ) : (
                   <span className="flex aspect-[488/680] w-full items-center justify-center p-2 text-center text-xs text-muted">{r.name}</span>
                 )}
-                <span className="absolute right-1 top-1 rounded-md bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white">
+                <span className="absolute right-1 top-1 z-10 flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-xs font-semibold text-white">
+                  <SetSymbol setCode={r.setCode} rarity={r.rarity} />
                   ×{r.quantity}{r.foil && <span className="ml-0.5 text-accent">✦</span>}
                 </span>
                 <span className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent px-2 pb-1.5 pt-5 text-left text-[11px] font-medium text-white opacity-0 transition group-hover:opacity-100">
@@ -293,6 +295,7 @@ export function CollectionView({
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-muted">
                   <ColorDots identity={r.colorIdentity} />
+                  <SetSymbol setCode={r.setCode} rarity={r.rarity} className="text-sm" />
                   {r.typeLine}
                 </span>
               </button>

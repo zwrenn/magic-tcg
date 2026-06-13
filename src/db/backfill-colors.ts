@@ -17,7 +17,13 @@ async function main() {
   const rows = await db
     .select({ id: schema.cards.id, scryfallId: schema.cards.scryfallId })
     .from(schema.cards)
-    .where(or(isNull(schema.cards.colorIdentity), isNull(schema.cards.setName)));
+    .where(
+      or(
+        isNull(schema.cards.colorIdentity),
+        isNull(schema.cards.setName),
+        isNull(schema.cards.rarity),
+      ),
+    );
 
   if (rows.length === 0) {
     console.log("Nothing to backfill — all cards already have color identity.");
@@ -50,6 +56,7 @@ async function main() {
         cmc?: number;
         type_line?: string;
         set_name?: string;
+        rarity?: string;
       }>;
     };
     for (const c of json.data ?? []) {
@@ -60,6 +67,7 @@ async function main() {
           cmc: c.cmc != null ? String(c.cmc) : undefined,
           typeLine: c.type_line ?? undefined,
           setName: c.set_name ?? undefined,
+          rarity: c.rarity ?? undefined,
         })
         .where(eq(schema.cards.scryfallId, c.id));
       updated++;

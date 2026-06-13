@@ -14,6 +14,8 @@ export type DeckCardMatch = {
   cmc: number | null;
   manaCost: string | null;
   colorIdentity: string | null;
+  rarity: string | null;
+  setCode: string | null;
   priceUsd: string | null;
   needed: number;
   isCommander: boolean;
@@ -72,6 +74,8 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       cmc: schema.cards.cmc,
       manaCost: schema.cards.manaCost,
       colorIdentity: schema.cards.colorIdentity,
+      rarity: schema.cards.rarity,
+      setCode: schema.cards.setCode,
       priceUsd: schema.cards.pricesUsd,
     })
     .from(schema.cards)
@@ -96,6 +100,8 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       cmc: m?.cmc != null ? Number(m.cmc) : null,
       manaCost: m?.manaCost ?? null,
       colorIdentity: m?.colorIdentity ?? null,
+      rarity: m?.rarity ?? null,
+      setCode: m?.setCode ?? null,
       priceUsd: m?.priceUsd ?? null,
       needed: dc.quantity,
       isCommander: dc.isCommander,

@@ -40,6 +40,8 @@ export const cards = pgTable(
     typeLine: text("type_line"),
     /** Comma-joined WUBRG color identity (e.g. "U,B"; "" = colorless). For organizing. */
     colorIdentity: text("color_identity"),
+    /** common | uncommon | rare | mythic | special | bonus — for rarity gems. */
+    rarity: text("rarity"),
     /** Stored as numeric to avoid float drift; nullable (some cards lack a price). */
     pricesUsd: numeric("prices_usd"),
     updatedAt: timestamp("updated_at", { withTimezone: true })

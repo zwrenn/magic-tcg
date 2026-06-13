@@ -33,6 +33,7 @@ export type CollectionRow = {
   manaCost: string | null;
   cmc: number | null;
   colorIdentity: string | null;
+  rarity: string | null;
   setCode: string | null;
   setName: string | null;
   priceUsd: string | null;
@@ -65,6 +66,7 @@ export async function searchUserCollection(
       manaCost: schema.cards.manaCost,
       cmc: schema.cards.cmc,
       colorIdentity: schema.cards.colorIdentity,
+      rarity: schema.cards.rarity,
       setCode: schema.cards.setCode,
       setName: schema.cards.setName,
       priceUsd: schema.cards.pricesUsd,

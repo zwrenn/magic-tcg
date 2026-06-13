@@ -104,6 +104,32 @@ h3 {
   color: var(--accent-fg);
 }
 
+/* Holographic foil shimmer for foil cards. */
+@keyframes foilshift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.foil-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(255, 0, 200, 0.35),
+    rgba(0, 200, 255, 0.35),
+    rgba(120, 255, 160, 0.35),
+    rgba(255, 220, 0, 0.3),
+    transparent 82%
+  );
+  background-size: 220% 100%;
+  mix-blend-mode: screen;
+  animation: foilshift 3.5s linear infinite;
+  opacity: 0.55;
+}
+
 /* Hide scrollbar but keep scrollability (mobile nav). */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
