@@ -1,7 +1,19 @@
 import "server-only";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { ensureCardsByScryfallId } from "./scryfall";
+
+/** Wipe a user's entire collection. Returns how many rows were removed. */
+export async function clearCollection(userId: number): Promise<number> {
+  const [before] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.collectionItems)
+    .where(eq(schema.collectionItems.userId, userId));
+  await db
+    .delete(schema.collectionItems)
+    .where(eq(schema.collectionItems.userId, userId));
+  return before?.n ?? 0;
+}
 
 /**
  * Add a single printing to a user's collection (the "I just opened it" flow).

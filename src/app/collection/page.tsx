@@ -3,6 +3,7 @@ import { collectionTotals, searchUserCollection } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
 import { CollectionView } from "./collection-view";
 import { AddCardPanel } from "./add-card-panel";
+import { ClearCollectionButton } from "./clear-collection-button";
 import { SearchHotkey } from "@/components/search-hotkey";
 
 // High cap so color/type/set filtering works across the whole collection
@@ -42,7 +43,10 @@ export default async function CollectionPage({
             est. value
           </p>
         </div>
-        <AddCardPanel />
+        <div className="flex flex-wrap items-center gap-2">
+          <AddCardPanel />
+          {totals.distinct > 0 && <ClearCollectionButton count={totals.distinct} />}
+        </div>
       </div>
 
       <form className="mt-5 flex gap-2">
