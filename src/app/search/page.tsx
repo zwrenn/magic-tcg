@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { globalSearch } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
@@ -55,7 +54,6 @@ export default async function SearchPage({
         <ul className="mt-6 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {results.map((r) => {
             const decks = deckUsage[r.normalizedName] ?? [];
-            const deckOwners = new Set(decks.map((d) => d.owner));
             return (
               <li key={r.normalizedName} className="flex items-start gap-3 px-3 py-2">
                 <CardZoomButton name={r.name} image={r.image} className="shrink-0">
@@ -92,47 +90,33 @@ export default async function SearchPage({
                         <span className="text-xs text-muted">nobody has it</span>
                       ) : (
                         r.owners.map((o) => {
-                          const committed = deckOwners.has(o.name);
+                          const ownerDecks = decks
+                            .filter((d) => d.owner === o.name)
+                            .map((d) => d.name);
+                          const committed = ownerDecks.length > 0;
                           return (
                             <span
                               key={o.name}
                               className={`rounded-full px-2 py-0.5 text-xs ${
                                 committed
                                   ? "bg-[var(--purple)]/15 text-[var(--purple-deep)]"
-                                  : "bg-surface-2"
+                                  : "bg-good/15 text-[var(--green-deep)]"
                               }`}
                               title={
                                 committed
-                                  ? `${o.name} runs this in a deck — likely in use`
-                                  : o.foil
-                                    ? "has a foil copy"
-                                    : undefined
+                                  ? `${o.name}'s copy is in ${ownerDecks.join(", ")} — ask before borrowing`
+                                  : `${o.name} has a spare — likely free to lend`
                               }
                             >
                               {label(o.name)} ×{o.qty}
                               {o.foil ? " ✦" : ""}
-                              {committed ? " 🃏" : ""}
+                              {committed ? " · 🃏 in deck" : " · free"}
                             </span>
                           );
                         })
                       )}
                     </div>
                   </div>
-                  {decks.length > 0 && (
-                    <p className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-muted">
-                      🃏 in a deck:
-                      {decks.map((d) => (
-                        <Link
-                          key={d.id}
-                          href={`/decks/${d.id}`}
-                          className="rounded-full bg-[var(--purple)]/10 px-1.5 text-[var(--purple-deep)] hover:underline"
-                        >
-                          {d.name} ({label(d.owner)})
-                        </Link>
-                      ))}
-                      <span className="text-subtle">— ask before borrowing</span>
-                    </p>
-                  )}
                 </div>
                 <QuickAddButton name={r.name} />
               </li>
