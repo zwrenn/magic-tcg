@@ -23,6 +23,12 @@ export function UserSwitch({
     window.location.reload();
   }
 
+  async function logout() {
+    setBusy(true);
+    await fetch("/api/logout", { method: "POST" });
+    window.location.assign("/gate");
+  }
+
   return (
     <div className="relative">
       <button
@@ -52,6 +58,14 @@ export function UserSwitch({
               {m}
             </button>
           ))}
+          <div className="my-1 border-t border-border" />
+          <button
+            disabled={busy}
+            onClick={logout}
+            className="block w-full px-3 py-2 text-left text-sm text-bad hover:bg-surface-2"
+          >
+            ⎋ Log out
+          </button>
         </div>
       )}
     </div>
