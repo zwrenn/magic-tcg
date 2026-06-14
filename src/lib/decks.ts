@@ -1,5 +1,5 @@
 import "server-only";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { ParsedCard } from "./deck-parser";
 import { ensureCardsByName } from "./scryfall";
@@ -39,6 +39,7 @@ export async function createDeck(opts: {
       normalizedName: c.normalizedName,
       quantity: c.quantity,
       isCommander: c.isCommander,
+      isProxy: c.isProxy ?? false,
     })),
   );
 
@@ -248,6 +249,31 @@ export async function getDeck(deckId: number) {
     .where(eq(schema.deckCards.deckId, deckId));
 
   return { ...deck, cards };
+}
+
+/** Toggle a deck card's proxy flag — only the deck owner may do this. */
+export async function setDeckCardProxy(
+  userId: number,
+  deckId: number,
+  normalizedName: string,
+  isProxy: boolean,
+): Promise<boolean> {
+  const [deck] = await db
+    .select({ owner: schema.decks.ownerUserId })
+    .from(schema.decks)
+    .where(eq(schema.decks.id, deckId))
+    .limit(1);
+  if (!deck || deck.owner !== userId) return false;
+  await db
+    .update(schema.deckCards)
+    .set({ isProxy })
+    .where(
+      and(
+        eq(schema.deckCards.deckId, deckId),
+        eq(schema.deckCards.normalizedName, normalizedName),
+      ),
+    );
+  return true;
 }
 
 export async function deleteDeck(deckId: number): Promise<void> {

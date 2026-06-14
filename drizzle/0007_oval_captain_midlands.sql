@@ -1,0 +1,1 @@
+ALTER TABLE "deck_cards" ADD COLUMN "is_proxy" boolean DEFAULT false NOT NULL;

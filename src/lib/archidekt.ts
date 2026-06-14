@@ -70,6 +70,8 @@ export async function fetchArchidektDeck(
     if (cats.some((c) => excluded.has(c.toLowerCase()))) continue;
 
     const isCommander = cats.some((c) => c.toLowerCase() === "commander");
+    // Many players tag proxies with a "Proxy" category in Archidekt.
+    const isProxy = cats.some((c) => c.toLowerCase().includes("proxy"));
     const quantity = entry.quantity && entry.quantity > 0 ? entry.quantity : 1;
     const normalizedName = normalizeName(name);
     if (!normalizedName) continue;
@@ -78,8 +80,9 @@ export async function fetchArchidektDeck(
     if (existing) {
       existing.quantity += quantity;
       existing.isCommander = existing.isCommander || isCommander;
+      existing.isProxy = existing.isProxy || isProxy;
     } else {
-      byKey.set(normalizedName, { name, normalizedName, quantity, isCommander });
+      byKey.set(normalizedName, { name, normalizedName, quantity, isCommander, isProxy });
     }
   }
 

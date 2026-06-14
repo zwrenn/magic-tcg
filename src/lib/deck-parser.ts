@@ -7,6 +7,7 @@ export type ParsedCard = {
   normalizedName: string;
   quantity: number;
   isCommander: boolean;
+  isProxy?: boolean;
 };
 
 export type ParseResult = {

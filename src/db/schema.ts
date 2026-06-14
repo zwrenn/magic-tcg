@@ -123,6 +123,8 @@ export const deckCards = pgTable(
     normalizedName: text("normalized_name").notNull(),
     quantity: integer("quantity").notNull().default(1),
     isCommander: boolean("is_commander").notNull().default(false),
+    /** Marked as a proxy (auto from Archidekt "proxy" labels, or toggled). */
+    isProxy: boolean("is_proxy").notNull().default(false),
   },
   (t) => [index("deck_cards_deck_idx").on(t.deckId)],
 );

@@ -19,6 +19,7 @@ export type DeckCardMatch = {
   priceUsd: string | null;
   needed: number;
   isCommander: boolean;
+  isProxy: boolean;
   /** Every pod member who owns at least one copy (any printing). */
   owners: OwnerHolding[];
 };
@@ -105,6 +106,7 @@ export async function matchDeck(deckId: number): Promise<DeckMatch | null> {
       priceUsd: m?.priceUsd ?? null,
       needed: dc.quantity,
       isCommander: dc.isCommander,
+      isProxy: dc.isProxy,
       owners,
     };
   });

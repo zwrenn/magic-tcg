@@ -47,6 +47,7 @@ export default async function DeckPage({
         viewerName={viewer.name}
         members={[...POD_MEMBERS]}
         deckId={deck.id}
+        canEdit={deck.ownerUserId === viewer.id}
       />
     </main>
   );

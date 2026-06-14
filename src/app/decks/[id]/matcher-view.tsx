@@ -15,12 +15,14 @@ export function MatcherView({
   viewerName,
   members,
   deckId,
+  canEdit,
 }: {
   cards: DeckCardMatch[];
   deckOwnerName: string;
   viewerName: string;
   members: string[];
   deckId: number;
+  canEdit: boolean;
 }) {
   // Default: exclude the viewer's own cards, so you see what the rest of the
   // pod can contribute to you.
@@ -30,7 +32,27 @@ export function MatcherView({
   const [filterOwner, setFilterOwner] = useState<string>("all");
   const [copied, setCopied] = useState(false);
   const [asked, setAsked] = useState<Set<string>>(new Set());
+  const [proxies, setProxies] = useState<Set<string>>(
+    () => new Set(cards.filter((c) => c.isProxy).map((c) => c.normalizedName)),
+  );
   const { openList } = useCardZoom();
+
+  async function toggleProxy(normalizedName: string) {
+    const next = new Set(proxies);
+    const willBe = !next.has(normalizedName);
+    if (willBe) next.add(normalizedName);
+    else next.delete(normalizedName);
+    setProxies(next);
+    try {
+      await fetch("/api/decks/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deckId, normalizedName, isProxy: willBe }),
+      });
+    } catch {
+      /* optimistic */
+    }
+  }
 
   async function requestCard(owner: string, cardName: string) {
     const key = `${cardName}::${owner}`;
@@ -190,6 +212,11 @@ export function MatcherView({
         <p className="mt-1 text-xs text-muted">
           {summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}% of
           the non-basic cards are covered by the pod · basic lands excluded
+          {proxies.size > 0 && (
+            <span className="text-[var(--purple-deep)]">
+              {" · "}🔁 {proxies.size} prox{proxies.size === 1 ? "y" : "ies"} to replace
+            </span>
+          )}
         </p>
         </div>
       </div>
@@ -299,13 +326,30 @@ export function MatcherView({
                           CMDR
                         </span>
                       )}
+                      {proxies.has(r.card.normalizedName) && (
+                        <span className="rounded bg-[var(--purple)]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--purple-deep)]">
+                          🔁 PROXY
+                        </span>
+                      )}
                       {r.card.manaCost && <ManaCost cost={r.card.manaCost} />}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted">
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
                       <ColorDots identity={r.card.colorIdentity} />
                       <SetSymbol setCode={r.card.setCode} rarity={r.card.rarity} className="text-sm" />
                       need {r.card.needed}
                       {r.card.typeLine ? ` · ${r.card.typeLine}` : ""}
+                      {canEdit && (
+                        <button
+                          onClick={() => toggleProxy(r.card.normalizedName)}
+                          className={`rounded-full border px-1.5 py-0.5 text-[10px] transition ${
+                            proxies.has(r.card.normalizedName)
+                              ? "border-[var(--purple)] text-[var(--purple-deep)]"
+                              : "border-border text-muted hover:border-[var(--purple)] hover:text-[var(--purple-deep)]"
+                          }`}
+                        >
+                          {proxies.has(r.card.normalizedName) ? "✓ proxy" : "mark proxy"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-end gap-1">
