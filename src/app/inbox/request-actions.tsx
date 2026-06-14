@@ -3,18 +3,44 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function RequestActions({ id, role }: { id: number; role: "in" | "out" }) {
+const TONE: Record<string, string> = {
+  pending: "text-warn",
+  given: "text-good",
+  declined: "text-bad",
+  cancelled: "text-muted",
+};
+
+/** Status badge + actions for one request, with optimistic updates. */
+export function RequestStatus({
+  id,
+  role,
+  initialStatus,
+}: {
+  id: number;
+  role: "in" | "out";
+  initialStatus: string;
+}) {
   const router = useRouter();
+  const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
 
-  async function act(status: "given" | "declined" | "cancelled") {
+  async function act(next: "given" | "declined" | "cancelled") {
     setBusy(true);
-    await fetch("/api/requests/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
-    router.refresh();
+    setStatus(next); // optimistic — update immediately
+    try {
+      await fetch("/api/requests/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: next }),
+      });
+    } catch {
+      /* keep optimistic value */
+    }
+    router.refresh(); // sync the nav badge + counts
+  }
+
+  if (status !== "pending") {
+    return <span className={`shrink-0 text-sm font-semibold ${TONE[status] ?? "text-muted"}`}>{status}</span>;
   }
 
   if (role === "in") {

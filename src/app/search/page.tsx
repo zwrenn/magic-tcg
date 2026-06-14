@@ -6,6 +6,15 @@ import { CardZoomButton } from "@/components/card-zoom";
 import { FavoriteStar } from "@/components/favorite-star";
 import { QuickAddButton } from "@/components/quick-add-button";
 import { SearchHotkey } from "@/components/search-hotkey";
+import { SearchOwnerChips } from "./owner-chips";
+
+function ownerDecksMap(
+  decks: { owner: string; name: string }[],
+): Record<string, string[]> {
+  const m: Record<string, string[]> = {};
+  for (const d of decks) (m[d.owner] ??= []).push(d.name);
+  return m;
+}
 
 export default async function SearchPage({
   searchParams,
@@ -19,7 +28,6 @@ export default async function SearchPage({
     getFavorites(viewer.id),
     getDeckUsage(),
   ]);
-  const label = (name: string) => (name === viewer.name ? "you" : name);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -85,37 +93,12 @@ export default async function SearchPage({
                     >
                       {r.name}
                     </CardZoomButton>
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {r.owners.length === 0 ? (
-                        <span className="text-xs text-muted">nobody has it</span>
-                      ) : (
-                        r.owners.map((o) => {
-                          const ownerDecks = decks
-                            .filter((d) => d.owner === o.name)
-                            .map((d) => d.name);
-                          const committed = ownerDecks.length > 0;
-                          return (
-                            <span
-                              key={o.name}
-                              className={`rounded-full px-2 py-0.5 text-xs ${
-                                committed
-                                  ? "bg-[var(--purple)]/15 text-[var(--purple-deep)]"
-                                  : "bg-good/15 text-[var(--green-deep)]"
-                              }`}
-                              title={
-                                committed
-                                  ? `${o.name}'s copy is in ${ownerDecks.join(", ")} — ask before borrowing`
-                                  : `${o.name} has a spare — likely free to lend`
-                              }
-                            >
-                              {label(o.name)} ×{o.qty}
-                              {o.foil ? " ✦" : ""}
-                              {committed ? " · 🃏 in deck" : " · free"}
-                            </span>
-                          );
-                        })
-                      )}
-                    </div>
+                    <SearchOwnerChips
+                      cardName={r.name}
+                      owners={r.owners}
+                      viewerName={viewer.name}
+                      decksByOwner={ownerDecksMap(decks)}
+                    />
                   </div>
                 </div>
                 <QuickAddButton name={r.name} />

@@ -2,14 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getInbox, getOutgoing, type RequestRow } from "@/lib/requests";
 import { CardZoomButton } from "@/components/card-zoom";
-import { RequestActions } from "./request-actions";
-
-const STATUS_TONE: Record<string, string> = {
-  pending: "text-warn",
-  given: "text-good",
-  declined: "text-bad",
-  cancelled: "text-muted",
-};
+import { RequestStatus } from "./request-actions";
 
 export default async function InboxPage() {
   const user = await requireUser();
@@ -84,11 +77,9 @@ function Row({ r, role, who }: { r: RequestRow; role: "in" | "out"; who: string 
               )}
             </>
           )}
-          {" · "}
-          <span className={STATUS_TONE[r.status] ?? "text-muted"}>{r.status}</span>
         </div>
       </div>
-      {r.status === "pending" && <RequestActions id={r.id} role={role} />}
+      <RequestStatus id={r.id} role={role} initialStatus={r.status} />
     </li>
   );
 }
