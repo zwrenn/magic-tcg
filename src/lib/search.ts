@@ -12,7 +12,8 @@ export async function collectionTotals(
     .select({
       distinct: sql<number>`count(*)::int`,
       total: sql<number>`coalesce(sum(${schema.collectionItems.quantity}), 0)::int`,
-      valueUsd: sql<number>`coalesce(sum(${schema.collectionItems.quantity} * ${schema.cards.pricesUsd}), 0)::float`,
+      // foil copies use the foil price when available
+      valueUsd: sql<number>`coalesce(sum(${schema.collectionItems.quantity} * coalesce(case when ${schema.collectionItems.foil} then ${schema.cards.priceUsdFoil} else ${schema.cards.pricesUsd} end, ${schema.cards.pricesUsd})), 0)::float`,
     })
     .from(schema.collectionItems)
     .innerJoin(schema.cards, eq(schema.cards.id, schema.collectionItems.cardId))
@@ -70,6 +71,7 @@ export async function searchUserCollection(
       setCode: schema.cards.setCode,
       setName: schema.cards.setName,
       priceUsd: schema.cards.pricesUsd,
+      priceUsdFoil: schema.cards.priceUsdFoil,
       quantity: schema.collectionItems.quantity,
       foil: schema.collectionItems.foil,
       condition: schema.collectionItems.condition,
@@ -80,8 +82,12 @@ export async function searchUserCollection(
     .orderBy(schema.cards.name)
     .limit(limit);
 
-  // numeric columns come back as strings from the driver
-  return rows.map((r) => ({ ...r, cmc: r.cmc != null ? Number(r.cmc) : null }));
+  // numeric columns come back as strings; foil copies use the foil price.
+  return rows.map(({ priceUsdFoil, ...r }) => ({
+    ...r,
+    cmc: r.cmc != null ? Number(r.cmc) : null,
+    priceUsd: r.foil && priceUsdFoil ? priceUsdFoil : r.priceUsd,
+  }));
 }
 
 export type GlobalSearchResult = {

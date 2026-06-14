@@ -44,6 +44,8 @@ export const cards = pgTable(
     rarity: text("rarity"),
     /** Stored as numeric to avoid float drift; nullable (some cards lack a price). */
     pricesUsd: numeric("prices_usd"),
+    /** Foil-finish USD price (Scryfall prices.usd_foil); used for foil copies. */
+    priceUsdFoil: numeric("price_usd_foil"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

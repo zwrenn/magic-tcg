@@ -22,6 +22,7 @@ async function main() {
         isNull(schema.cards.colorIdentity),
         isNull(schema.cards.setName),
         isNull(schema.cards.rarity),
+        isNull(schema.cards.priceUsdFoil),
       ),
     );
 
@@ -57,6 +58,7 @@ async function main() {
         type_line?: string;
         set_name?: string;
         rarity?: string;
+        prices?: { usd?: string | null; usd_foil?: string | null };
       }>;
     };
     for (const c of json.data ?? []) {
@@ -68,6 +70,8 @@ async function main() {
           typeLine: c.type_line ?? undefined,
           setName: c.set_name ?? undefined,
           rarity: c.rarity ?? undefined,
+          pricesUsd: c.prices?.usd ?? null,
+          priceUsdFoil: c.prices?.usd_foil ?? null,
         })
         .where(eq(schema.cards.scryfallId, c.id));
       updated++;

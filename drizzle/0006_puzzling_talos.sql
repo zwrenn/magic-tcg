@@ -1,0 +1,1 @@
+ALTER TABLE "cards" ADD COLUMN "price_usd_foil" numeric;

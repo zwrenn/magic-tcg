@@ -70,7 +70,7 @@ type ScryfallCard = {
   rarity?: string;
   image_uris?: { normal?: string; small?: string };
   card_faces?: Array<{ image_uris?: { normal?: string; small?: string } }>;
-  prices?: { usd?: string | null };
+  prices?: { usd?: string | null; usd_foil?: string | null };
 };
 
 type Identifier = { id: string } | { name: string };
@@ -101,6 +101,7 @@ function toNewCard(c: ScryfallCard): NewCard {
     colorIdentity: c.color_identity ? c.color_identity.join(",") : null,
     rarity: c.rarity ?? null,
     pricesUsd: c.prices?.usd ?? null,
+    priceUsdFoil: c.prices?.usd_foil ?? null,
   };
 }
 

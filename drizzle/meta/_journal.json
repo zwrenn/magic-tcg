@@ -43,6 +43,13 @@
       "when": 1781469417390,
       "tag": "0005_cloudy_trauma",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781470827474,
+      "tag": "0006_puzzling_talos",
+      "breakpoints": true
     }
   ]
 }
