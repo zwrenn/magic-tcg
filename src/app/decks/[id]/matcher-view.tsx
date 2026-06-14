@@ -120,7 +120,7 @@ export function MatcherView({
     return m;
   }, [ordered]);
   const openZoom = (normalizedName: string) =>
-    openList(zoomList, zoomIndex.get(normalizedName) ?? 0);
+    openList(zoomList, zoomIndex.get(normalizedName) ?? 0, { allowEdit: false });
 
   function copyMissing() {
     // Buylist = what the pod can't cover: shortfall per card.

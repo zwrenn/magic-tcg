@@ -5,14 +5,15 @@ import { QuickAddButton } from "./quick-add-button";
 import { RemoveCardButton } from "./remove-card-button";
 
 type ZoomCard = { name: string; image: string | null };
+type ZoomOpts = { allowEdit?: boolean };
 
-type ZoomState = { list: ZoomCard[]; index: number };
+type ZoomState = { list: ZoomCard[]; index: number; allowEdit: boolean };
 
 type ZoomApi = {
   /** Zoom a single card (no prev/next). */
-  open: (card: ZoomCard) => void;
+  open: (card: ZoomCard, opts?: ZoomOpts) => void;
   /** Zoom within an ordered list, starting at index — enables ←/→ navigation. */
-  openList: (list: ZoomCard[], index: number) => void;
+  openList: (list: ZoomCard[], index: number, opts?: ZoomOpts) => void;
 };
 
 const ZoomContext = createContext<ZoomApi | null>(null);
@@ -23,9 +24,14 @@ const ZoomContext = createContext<ZoomApi | null>(null);
  */
 export function CardZoomProvider({ children }: { children: React.ReactNode }) {
   const [zoom, setZoom] = useState<ZoomState | null>(null);
-  const open = useCallback((card: ZoomCard) => setZoom({ list: [card], index: 0 }), []);
+  const open = useCallback(
+    (card: ZoomCard, opts?: ZoomOpts) =>
+      setZoom({ list: [card], index: 0, allowEdit: opts?.allowEdit ?? true }),
+    [],
+  );
   const openList = useCallback(
-    (list: ZoomCard[], index: number) => setZoom(list.length ? { list, index } : null),
+    (list: ZoomCard[], index: number, opts?: ZoomOpts) =>
+      setZoom(list.length ? { list, index, allowEdit: opts?.allowEdit ?? true } : null),
     [],
   );
   const close = useCallback(() => setZoom(null), []);
@@ -85,8 +91,12 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <QuickAddButton name={card.name} label="+ Add to collection" className="px-4 py-1.5 text-sm" />
-              <RemoveCardButton name={card.name} />
+              {zoom.allowEdit && (
+                <>
+                  <QuickAddButton name={card.name} label="+ Add to my collection" className="px-4 py-1.5 text-sm" />
+                  <RemoveCardButton name={card.name} />
+                </>
+              )}
               <a
                 href={`https://scryfall.com/search?q=${encodeURIComponent(`!"${card.name}"`)}`}
                 target="_blank"
@@ -126,19 +136,21 @@ export function CardZoomButton({
   children,
   className = "",
   title,
+  allowEdit = true,
 }: {
   name: string;
   image: string | null;
   children: React.ReactNode;
   className?: string;
   title?: string;
+  allowEdit?: boolean;
 }) {
   const { open } = useCardZoom();
   return (
     <button
       type="button"
       title={title ?? name}
-      onClick={() => open({ name, image })}
+      onClick={() => open({ name, image }, { allowEdit })}
       className={className}
     >
       {children}

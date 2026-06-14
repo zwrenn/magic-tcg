@@ -117,7 +117,7 @@ export default async function PlayerStatsPage({
           <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {topValuable.map((r, i) => (
               <li key={`${r.name}-${i}`}>
-                <CardZoomButton name={r.name} image={r.image} className="block w-full">
+                <CardZoomButton name={r.name} image={r.image} allowEdit={isSelf} className="block w-full">
                   {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.image} alt={r.name} loading="lazy" className="aspect-[488/680] w-full rounded-lg border border-border object-cover" />
