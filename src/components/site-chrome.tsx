@@ -17,7 +17,7 @@ export async function SiteChrome() {
 
   const proclamations = [
     `✨ Welcome back, ${user.name}!`,
-    `🃏 The pod has ${stats.cards.toLocaleString()} cards across ${stats.decks} ${stats.decks === 1 ? "deck" : "decks"}`,
+    `🃏 ${stats.cards.toLocaleString()} cards in the vault · ${stats.decks} ${stats.decks === 1 ? "deck" : "decks"} built`,
     `💚 A glowing green bar means someone in the pod already owns that card`,
     `🔮 Paste a decklist to see what you already own`,
   ];
