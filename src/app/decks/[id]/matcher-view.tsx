@@ -14,11 +14,13 @@ export function MatcherView({
   cards,
   viewerName,
   members,
+  deckId,
 }: {
   cards: DeckCardMatch[];
   deckOwnerName: string;
   viewerName: string;
   members: string[];
+  deckId: number;
 }) {
   // Default: exclude the viewer's own cards, so you see what the rest of the
   // pod can contribute to you.
@@ -27,7 +29,22 @@ export function MatcherView({
   const [filterType, setFilterType] = useState<TypeBucket | "all">("all");
   const [filterOwner, setFilterOwner] = useState<string>("all");
   const [copied, setCopied] = useState(false);
+  const [asked, setAsked] = useState<Set<string>>(new Set());
   const { openList } = useCardZoom();
+
+  async function requestCard(owner: string, cardName: string) {
+    const key = `${cardName}::${owner}`;
+    setAsked((s) => new Set(s).add(key));
+    try {
+      await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toUser: owner, cardName, deckId }),
+      });
+    } catch {
+      /* optimistic */
+    }
+  }
 
   // Apply exclusion, compute availability + section for every card once.
   const rows = useMemo(() => {
@@ -295,16 +312,36 @@ export function MatcherView({
                     {r.eff.length === 0 ? (
                       <span className="text-xs text-muted">—</span>
                     ) : (
-                      r.eff.map((o) => (
-                        <span
-                          key={o.name}
-                          className="rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                          title={o.foil ? "has a foil copy" : undefined}
-                        >
-                          {label(o.name)} ×{o.qty}
-                          {o.foil ? " ✦" : ""}
-                        </span>
-                      ))
+                      r.eff.map((o) => {
+                        const mine = o.name === viewerName;
+                        const askedKey = `${r.card.name}::${o.name}`;
+                        const didAsk = asked.has(askedKey);
+                        return mine ? (
+                          <span
+                            key={o.name}
+                            className="rounded-full bg-surface-2 px-2 py-0.5 text-xs"
+                            title={o.foil ? "you have a foil copy" : undefined}
+                          >
+                            {label(o.name)} ×{o.qty}
+                            {o.foil ? " ✦" : ""}
+                          </span>
+                        ) : (
+                          <button
+                            key={o.name}
+                            onClick={() => !didAsk && requestCard(o.name, r.card.name)}
+                            disabled={didAsk}
+                            title={didAsk ? "Request sent" : `Ask ${o.name} for this card`}
+                            className={`rounded-full px-2 py-0.5 text-xs transition ${
+                              didAsk
+                                ? "bg-good/15 text-good"
+                                : "bg-surface-2 hover:bg-[var(--purple)]/15 hover:text-[var(--purple-deep)]"
+                            }`}
+                          >
+                            {o.name} ×{o.qty}
+                            {o.foil ? " ✦" : ""} {didAsk ? "✓ asked" : "🙋 ask"}
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </li>

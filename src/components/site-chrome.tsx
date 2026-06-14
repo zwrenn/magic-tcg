@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getPodStats } from "@/lib/pod-stats";
+import { countIncomingPending } from "@/lib/requests";
 import { Banner } from "./banner";
 import { Tabs } from "./tabs";
 import { Marquee } from "./marquee";
@@ -9,7 +10,10 @@ import { GlitterField } from "./glitter-field";
 export async function SiteChrome() {
   const user = await getCurrentUser();
   if (!user) return null;
-  const stats = await getPodStats();
+  const [stats, inboxCount] = await Promise.all([
+    getPodStats(),
+    countIncomingPending(user.id),
+  ]);
 
   const proclamations = [
     `✨ Welcome back, ${user.name}!`,
@@ -25,7 +29,7 @@ export async function SiteChrome() {
         <div className="relative">
           <GlitterField density={0.6} />
           <div className="relative z-[3]">
-            <Tabs />
+            <Tabs inboxCount={inboxCount} />
           </div>
         </div>
         <Marquee items={proclamations} />

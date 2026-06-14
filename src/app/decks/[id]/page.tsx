@@ -46,6 +46,7 @@ export default async function DeckPage({
         deckOwnerName={deck.ownerName}
         viewerName={viewer.name}
         members={[...POD_MEMBERS]}
+        deckId={deck.id}
       />
     </main>
   );

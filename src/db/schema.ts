@@ -148,6 +148,36 @@ export const favorites = pgTable(
   ],
 );
 
+/**
+ * Card requests between pod members — "hey, can I borrow your Rhystic Study?".
+ * from_user asks to_user for a card; to_user resolves it from their Inbox.
+ */
+export const requests = pgTable(
+  "requests",
+  {
+    id: serial("id").primaryKey(),
+    fromUserId: integer("from_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    toUserId: integer("to_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardName: text("card_name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    /** Optional deck the request is for context. */
+    deckId: integer("deck_id").references(() => decks.id, { onDelete: "set null" }),
+    note: text("note"),
+    /** pending | given | declined | cancelled */
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("requests_to_idx").on(t.toUserId),
+    index("requests_from_idx").on(t.fromUserId),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type Card = typeof cards.$inferSelect;
 export type NewCard = typeof cards.$inferInsert;
