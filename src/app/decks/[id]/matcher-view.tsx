@@ -29,6 +29,8 @@ export function MatcherView({
   const [excludeMine, setExcludeMine] = useState(true);
   const [sort, setSort] = useState<SortKey>("name");
   const [filterType, setFilterType] = useState<TypeBucket | "all">("all");
+  const [filterColor, setFilterColor] = useState<string>("all");
+  const [filterRarity, setFilterRarity] = useState<string>("all");
   const [filterOwner, setFilterOwner] = useState<string>("all");
   const [copied, setCopied] = useState(false);
   const [asked, setAsked] = useState<Set<string>>(new Set());
@@ -97,6 +99,15 @@ export function MatcherView({
   const visible = useMemo(() => {
     let v = rows;
     if (filterType !== "all") v = v.filter((r) => r.bucket === filterType);
+    if (filterColor !== "all")
+      v = v.filter((r) => {
+        const cols = (r.card.colorIdentity ?? "").split(",").filter(Boolean);
+        if (filterColor === "C") return cols.length === 0;
+        if (filterColor === "multi") return cols.length > 1;
+        return cols.includes(filterColor);
+      });
+    if (filterRarity !== "all")
+      v = v.filter((r) => (r.card.rarity ?? "").toLowerCase() === filterRarity);
     if (filterOwner !== "all")
       v = v.filter((r) => r.eff.some((o) => o.name === filterOwner));
     const sorter = (a: typeof rows[number], b: typeof rows[number]) =>
@@ -105,7 +116,7 @@ export function MatcherView({
         : (a.card.cmc ?? 99) - (b.card.cmc ?? 99) ||
           a.card.name.localeCompare(b.card.name);
     return [...v].sort(sorter);
-  }, [rows, filterType, filterOwner, sort]);
+  }, [rows, filterType, filterColor, filterRarity, filterOwner, sort]);
 
   const sections: { key: Section; label: string; tone: string }[] = [
     { key: "full", label: "Fully covered", tone: "text-good" },
@@ -261,6 +272,33 @@ export function MatcherView({
           options={[
             { value: "all", label: "All types" },
             ...TYPE_BUCKETS.map((b) => ({ value: b, label: b })),
+          ]}
+        />
+        <Select
+          value={filterColor}
+          onChange={setFilterColor}
+          label="Color"
+          options={[
+            { value: "all", label: "All colors" },
+            { value: "W", label: "White" },
+            { value: "U", label: "Blue" },
+            { value: "B", label: "Black" },
+            { value: "R", label: "Red" },
+            { value: "G", label: "Green" },
+            { value: "multi", label: "Multicolor" },
+            { value: "C", label: "Colorless" },
+          ]}
+        />
+        <Select
+          value={filterRarity}
+          onChange={setFilterRarity}
+          label="Rarity"
+          options={[
+            { value: "all", label: "All rarities" },
+            { value: "common", label: "Common" },
+            { value: "uncommon", label: "Uncommon" },
+            { value: "rare", label: "Rare" },
+            { value: "mythic", label: "Mythic" },
           ]}
         />
         <Select

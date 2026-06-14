@@ -132,8 +132,11 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                   <RemoveCardButton name={card.name} />
                 </>
               )}
-              {!zoom.allowEdit && card.viewerOwns && (
-                <RemoveCardButton name={card.name} />
+              {!zoom.allowEdit && (
+                <>
+                  <QuickAddButton name={card.name} label="✓ I have this" className="px-4 py-1.5 text-sm" />
+                  {card.viewerOwns && <RemoveCardButton name={card.name} />}
+                </>
               )}
               {zoom.proxy && card.key && (
                 <button
