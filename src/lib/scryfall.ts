@@ -52,7 +52,10 @@ class TokenBucket {
   }
 }
 
-const bucket = new TokenBucket(10, 10);
+// No bursting: ~8 req/sec, one at a time (~125ms apart) so Scryfall stays happy.
+const bucket = new TokenBucket(1, 8);
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type ScryfallCard = {
   id: string;
@@ -101,23 +104,48 @@ function toNewCard(c: ScryfallCard): NewCard {
   };
 }
 
-/** POST one batch (<=75 identifiers). Returns resolved cards; missing are dropped. */
+/**
+ * POST one batch (<=75 identifiers). Returns resolved cards; missing are
+ * dropped. Retries on 429/503 with backoff (honoring Retry-After) so a
+ * transient rate-limit doesn't kill a whole import.
+ */
 async function fetchBatch(identifiers: Identifier[]): Promise<ScryfallCard[]> {
-  await bucket.take();
-  const res = await fetch(`${SCRYFALL_BASE}/cards/collection`, {
-    method: "POST",
-    headers: HEADERS,
-    body: JSON.stringify({ identifiers }),
-    // never cache at the fetch layer — our DB is the cache
-    cache: "no-store",
-  });
-  if (!res.ok) {
+  const MAX_TRIES = 5;
+  for (let attempt = 1; ; attempt++) {
+    await bucket.take();
+    let res: Response;
+    try {
+      res = await fetch(`${SCRYFALL_BASE}/cards/collection`, {
+        method: "POST",
+        headers: HEADERS,
+        body: JSON.stringify({ identifiers }),
+        cache: "no-store",
+      });
+    } catch (e) {
+      if (attempt >= MAX_TRIES) throw e;
+      await sleep(500 * attempt);
+      continue;
+    }
+
+    if (res.ok) {
+      const json = (await res.json()) as { data?: ScryfallCard[] };
+      return json.data ?? [];
+    }
+
+    // Back off and retry on rate-limit / transient server errors.
+    if ((res.status === 429 || res.status >= 500) && attempt < MAX_TRIES) {
+      const retryAfter = Number(res.headers.get("retry-after"));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 600 * attempt + 400;
+      await sleep(waitMs);
+      continue;
+    }
+
     throw new Error(
       `Scryfall /cards/collection failed: ${res.status} ${res.statusText}`,
     );
   }
-  const json = (await res.json()) as { data?: ScryfallCard[] };
-  return json.data ?? [];
 }
 
 /** Insert any cards we just fetched, ignoring ones already cached by another concurrent path. */

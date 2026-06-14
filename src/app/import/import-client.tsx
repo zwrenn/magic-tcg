@@ -181,7 +181,7 @@ export function ImportClient() {
       )}
 
       {/* Progress */}
-      {progress && !done && (
+      {progress && !done && progress.stage !== "error" && (
         <div className="rounded-xl border border-border bg-surface p-5">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-medium">
