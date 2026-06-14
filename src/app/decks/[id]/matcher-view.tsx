@@ -95,6 +95,18 @@ export function MatcherView({
     return { total, covered, missing: total - covered, ranked };
   }, [rows]);
 
+  // Deck completeness counting kept proxies: a slot is "filled" if the pod
+  // covers it (real) OR it's a proxy you're keeping. proxyOnly = proxy slots
+  // not already covered by a real copy, so the bar segments don't double-count.
+  const completion = useMemo(() => {
+    let proxyOnly = 0;
+    for (const r of rows) {
+      if (r.available > 0) continue;
+      if (proxies.has(r.card.normalizedName)) proxyOnly++;
+    }
+    return { proxyOnly };
+  }, [rows, proxies]);
+
   // Visible rows after filters + sort.
   const visible = useMemo(() => {
     let v = rows;
@@ -196,6 +208,12 @@ export function MatcherView({
       ? `linear-gradient(90deg, ${deckColors.map((c) => COLOR_HEX[c]).join(", ")})`
       : "var(--border-strong)";
 
+  // Stacked-bar segment widths (kept as raw fractions so green + purple meet).
+  const realPct = summary.total ? (summary.covered / summary.total) * 100 : 0;
+  const proxyPct = summary.total
+    ? (completion.proxyOnly / summary.total) * 100
+    : 0;
+
   return (
     <div className="space-y-5">
       {/* Summary */}
@@ -223,24 +241,44 @@ export function MatcherView({
             {summary.missing} missing.
           </span>
         </p>
-        {/* Coverage bar */}
-        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+        {/* Coverage bar — green = pod-owned, purple = kept proxies filling the slot */}
+        <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
           <div
-            className="h-full rounded-full bg-good transition-all"
-            style={{
-              width: `${summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}%`,
-            }}
+            className="h-full bg-good transition-all"
+            style={{ width: `${realPct}%` }}
+            title={`${summary.covered} owned by the pod`}
+          />
+          <div
+            className="h-full bg-[var(--purple)] transition-all"
+            style={{ width: `${proxyPct}%` }}
+            title={`${completion.proxyOnly} filled by proxies you're keeping`}
           />
         </div>
         <p className="mt-1 text-xs text-muted">
-          {summary.total ? Math.round((summary.covered / summary.total) * 100) : 0}% of
-          the non-basic cards are covered by the pod · basic lands excluded
-          {proxies.size > 0 && (
+          {Math.round(realPct)}% covered by the pod
+          {completion.proxyOnly > 0 && (
             <span className="text-[var(--purple-deep)]">
-              {" · "}🔁 {proxies.size} prox{proxies.size === 1 ? "y" : "ies"} to replace
+              {" · "}
+              {Math.round(realPct + proxyPct)}% playable with proxies
             </span>
           )}
+          {" · "}basic lands excluded
         </p>
+        {proxies.size > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-good" />
+              owned
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--purple)]" />
+              proxy you&apos;re keeping
+            </span>
+            <span className="text-[var(--purple-deep)]">
+              🔁 {proxies.size} prox{proxies.size === 1 ? "y" : "ies"} tagged
+            </span>
+          </div>
+        )}
         </div>
       </div>
 
