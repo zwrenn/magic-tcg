@@ -14,7 +14,7 @@ export default async function GatePage({
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="t-hero text-4xl">The Pod</h1>
+          <h1 className="t-wordart text-4xl tracking-[0.06em]">THE&nbsp;POD</h1>
           <div className="mt-3 flex justify-center gap-1.5 text-xl">
             <i className="ms ms-w ms-cost ms-shadow" />
             <i className="ms ms-u ms-cost ms-shadow" />
