@@ -9,10 +9,10 @@ import { SearchHotkey } from "@/components/search-hotkey";
 import { SearchOwnerChips } from "./owner-chips";
 
 function ownerDecksMap(
-  decks: { owner: string; name: string }[],
-): Record<string, string[]> {
-  const m: Record<string, string[]> = {};
-  for (const d of decks) (m[d.owner] ??= []).push(d.name);
+  decks: { owner: string; id: number; name: string }[],
+): Record<string, { id: number; name: string }[]> {
+  const m: Record<string, { id: number; name: string }[]> = {};
+  for (const d of decks) (m[d.owner] ??= []).push({ id: d.id, name: d.name });
   return m;
 }
 
