@@ -1,4 +1,3 @@
-import { POD_MEMBERS } from "@/lib/pod";
 import { UserSwitch } from "./user-switch";
 import { GlitterField } from "./glitter-field";
 import type { User } from "@/db/schema";
@@ -41,7 +40,7 @@ export function Banner({ user, stats }: { user: User; stats: PodStats }) {
         <Plaque value={stats.decks} label="Decks" tone="lcd-green" />
         <Plaque value={stats.players} label="Players" tone="lcd-gold" />
         <div className="ml-1 hidden sm:block">
-          <UserSwitch current={user.name} members={[...POD_MEMBERS]} />
+          <UserSwitch current={user.name} />
         </div>
       </div>
     </div>

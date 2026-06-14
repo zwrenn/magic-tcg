@@ -35,24 +35,27 @@ export async function Sidebar({
           {roster.map((r) => {
             const isYou = r.name === currentUser;
             return (
-              <li
-                key={r.name}
-                className={`hover-pop flex items-center gap-2 rounded-xl border-[3px] px-2 py-1.5 ${
-                  isYou
-                    ? "border-[var(--accent)] bg-[#eafbe4]"
-                    : "border-[var(--border)] bg-white"
-                }`}
-              >
-                <span className="grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-gradient-to-b from-[#8fe87a] to-[#3f9a2c] text-xs font-bold text-[#10300f] shadow-[0_2px_0_rgba(63,154,44,0.5)]">
-                  {r.name[0]}
-                </span>
-                <span className="flex-1 font-semibold">
-                  {r.name}
-                  {isYou && <span className="ml-1 text-xs text-muted">(you)</span>}
-                </span>
-                <span className="lcd lcd-gold text-base tabular-nums">
-                  {r.count.toLocaleString()}
-                </span>
+              <li key={r.name}>
+                <Link
+                  href={`/stats/${encodeURIComponent(r.name)}`}
+                  title={`See ${r.name}'s stats`}
+                  className={`hover-pop flex items-center gap-2 rounded-xl border-[3px] px-2 py-1.5 transition ${
+                    isYou
+                      ? "border-[var(--accent)] bg-[#eafbe4]"
+                      : "border-[var(--border)] bg-white hover:border-[var(--purple)]"
+                  }`}
+                >
+                  <span className="grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-gradient-to-b from-[#8fe87a] to-[#3f9a2c] text-xs font-bold text-[#10300f] shadow-[0_2px_0_rgba(63,154,44,0.5)]">
+                    {r.name[0]}
+                  </span>
+                  <span className="flex-1 font-semibold">
+                    {r.name}
+                    {isYou && <span className="ml-1 text-xs text-muted">(you)</span>}
+                  </span>
+                  <span className="lcd lcd-gold text-base tabular-nums">
+                    {r.count.toLocaleString()}
+                  </span>
+                </Link>
               </li>
             );
           })}

@@ -31,3 +31,13 @@ export async function requireUser(): Promise<User> {
 export async function getAllUsers(): Promise<User[]> {
   return db.select().from(schema.users).orderBy(schema.users.id);
 }
+
+/** Look up a pod member by name. */
+export async function getUserByName(name: string): Promise<User | null> {
+  const rows = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.name, name))
+    .limit(1);
+  return rows[0] ?? null;
+}
