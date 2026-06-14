@@ -5,7 +5,7 @@ import { DeckGrid } from "@/components/deck-grid";
 
 export default async function HomePage() {
   const user = await requireUser();
-  const decks = await getBuildableDecks();
+  const decks = await getBuildableDecks(user.id);
 
   // "Random Deck" quick link target (deterministic-free pick is fine here).
   const randomHref =

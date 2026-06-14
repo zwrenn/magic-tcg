@@ -11,7 +11,13 @@ import { useEffect, useRef } from "react";
 const COLORS = ["#ff3db4", "#ffd23f", "#9b6cff", "#5cc04a", "#36e0e0", "#ffffff"];
 const STARS = ["✦", "✧", "✸", "❊"];
 
-export function GlitterField({ density = 1 }: { density?: number }) {
+export function GlitterField({
+  density = 1,
+  className = "",
+}: {
+  density?: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +73,7 @@ export function GlitterField({ density = 1 }: { density?: number }) {
     <div
       ref={ref}
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-[2] overflow-hidden"
+      className={`pointer-events-none absolute inset-0 z-[2] overflow-hidden ${className}`}
     />
   );
 }

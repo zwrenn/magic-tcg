@@ -17,8 +17,8 @@ function Plaque({ value, label, tone }: { value: number; label: string; tone: st
 
 export function Banner({ user, stats }: { user: User; stats: PodStats }) {
   return (
-    <div className="wood glitter-base relative flex flex-wrap items-center gap-4 overflow-hidden rounded-3xl px-4 py-3 sm:px-6 sm:py-4">
-      <GlitterField density={1.4} />
+    <div className="wood glitter-base relative z-30 flex flex-wrap items-center gap-4 rounded-3xl px-4 py-3 sm:px-6 sm:py-4">
+      <GlitterField density={1.4} className="rounded-3xl" />
       {/* Mascot orb */}
       <div className="float relative z-[5] grid h-14 w-14 shrink-0 place-items-center rounded-full border-[3px] border-white bg-gradient-to-b from-[#8fe87a] to-[#3f9a2c] shadow-[inset_0_3px_4px_rgba(255,255,255,0.6),0_4px_0_rgba(63,154,44,0.6)]">
         <span className="ms ms-g text-2xl text-[#10300f]" />

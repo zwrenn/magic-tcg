@@ -38,7 +38,7 @@ export default async function DeckPage({
             {deck.source}
           </p>
         </div>
-        <DeleteDeckButton deckId={deck.id} />
+        {deck.ownerUserId === viewer.id && <DeleteDeckButton deckId={deck.id} />}
       </div>
 
       <MatcherView

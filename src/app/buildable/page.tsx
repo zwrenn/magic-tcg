@@ -4,8 +4,8 @@ import { getBuildableDecks } from "@/lib/decks";
 import { ColorDots } from "@/components/mana";
 
 export default async function BuildablePage() {
-  await requireUser();
-  const decks = await getBuildableDecks();
+  const user = await requireUser();
+  const decks = await getBuildableDecks(user.id);
 
   const ready = decks.filter((d) => d.coveragePct === 100);
   const close = decks.filter((d) => d.coveragePct < 100 && d.coveragePct >= 75);

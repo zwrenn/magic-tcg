@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { parseDecklist } from "@/lib/deck-parser";
 import { fetchArchidektDeck } from "@/lib/archidekt";
 import { fetchCommanderDeck } from "@/lib/edhrec";
-import { createDeck, deleteDeck } from "@/lib/decks";
+import { createDeck, deleteDeck, getDeck } from "@/lib/decks";
 
 export type ActionState = { error?: string };
 
@@ -109,10 +109,14 @@ export async function createDeckFromCommander(
 }
 
 export async function deleteDeckAction(formData: FormData): Promise<void> {
-  await requireUser();
+  const user = await requireUser();
   const id = Number(formData.get("deckId"));
   if (Number.isFinite(id)) {
-    await deleteDeck(id);
+    // Only the deck's owner may delete it.
+    const deck = await getDeck(id);
+    if (deck && deck.ownerUserId === user.id) {
+      await deleteDeck(id);
+    }
   }
   revalidatePath("/");
   redirect("/");

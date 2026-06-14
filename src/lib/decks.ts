@@ -60,7 +60,8 @@ export type DeckSummary = {
   colors: string;
 };
 
-export async function listDecks(): Promise<DeckSummary[]> {
+/** List decks. Pass ownerUserId to scope to one player's decks. */
+export async function listDecks(ownerUserId?: number): Promise<DeckSummary[]> {
   const decks = await db
     .select({
       id: schema.decks.id,
@@ -72,6 +73,7 @@ export async function listDecks(): Promise<DeckSummary[]> {
     })
     .from(schema.decks)
     .innerJoin(schema.users, eq(schema.decks.ownerUserId, schema.users.id))
+    .where(ownerUserId ? eq(schema.decks.ownerUserId, ownerUserId) : undefined)
     .orderBy(desc(schema.decks.createdAt));
 
   if (decks.length === 0) return [];
@@ -148,8 +150,8 @@ export type BuildableDeck = DeckSummary & {
  * COMBINED collections. A deck card counts as covered when the pod owns at
  * least the needed quantity across everyone. Sorted most-complete first.
  */
-export async function getBuildableDecks(): Promise<BuildableDeck[]> {
-  const decks = await listDecks();
+export async function getBuildableDecks(ownerUserId?: number): Promise<BuildableDeck[]> {
+  const decks = await listDecks(ownerUserId);
   if (decks.length === 0) return [];
 
   // Pod-combined owned quantity per card (any printing), summed across members.
