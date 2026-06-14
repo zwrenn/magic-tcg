@@ -196,6 +196,31 @@ export async function getBuildableDecks(): Promise<BuildableDeck[]> {
     .sort((a, b) => b.coveragePct - a.coveragePct || a.missing - b.missing);
 }
 
+/**
+ * Which saved decks each card (by normalized name) appears in, across the whole
+ * pod. Keyed by normalizedName → list of decks. Used to flag collection cards
+ * that are committed to a deck.
+ */
+export async function getDeckUsage(): Promise<
+  Record<string, { id: number; name: string }[]>
+> {
+  const rows = await db
+    .select({
+      normalizedName: schema.deckCards.normalizedName,
+      id: schema.decks.id,
+      name: schema.decks.name,
+    })
+    .from(schema.deckCards)
+    .innerJoin(schema.decks, eq(schema.decks.id, schema.deckCards.deckId));
+
+  const map: Record<string, { id: number; name: string }[]> = {};
+  for (const r of rows) {
+    const list = (map[r.normalizedName] ??= []);
+    if (!list.some((d) => d.id === r.id)) list.push({ id: r.id, name: r.name });
+  }
+  return map;
+}
+
 export async function getDeck(deckId: number) {
   const [deck] = await db
     .select({

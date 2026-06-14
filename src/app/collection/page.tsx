@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { collectionTotals, searchUserCollection } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
+import { getDeckUsage } from "@/lib/decks";
 import { CollectionView } from "./collection-view";
 import { AddCardPanel } from "./add-card-panel";
 import { ClearCollectionButton } from "./clear-collection-button";
@@ -17,10 +18,11 @@ export default async function CollectionPage({
 }) {
   const user = await requireUser();
   const { q = "" } = await searchParams;
-  const [totals, rows, favorites] = await Promise.all([
+  const [totals, rows, favorites, deckUsage] = await Promise.all([
     collectionTotals(user.id),
     searchUserCollection(user.id, q, LIMIT),
     getFavorites(user.id),
+    getDeckUsage(),
   ]);
 
   return (
@@ -79,6 +81,7 @@ export default async function CollectionPage({
             limit={LIMIT}
             query={q}
             favorites={[...favorites]}
+            deckUsage={deckUsage}
           />
         </div>
       )}

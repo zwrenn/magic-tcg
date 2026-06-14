@@ -26,12 +26,14 @@ export function CollectionView({
   limit,
   query,
   favorites,
+  deckUsage = {},
 }: {
   rows: CollectionRow[];
   total: number;
   limit: number;
   query: string;
   favorites: string[];
+  deckUsage?: Record<string, { id: number; name: string }[]>;
 }) {
   const [view, setView] = useState<ViewMode>("grid");
   const [color, setColor] = useState<ColorBucket | "all">("all");
@@ -40,6 +42,8 @@ export function CollectionView({
   const [sort, setSort] = useState<SortKey>("name");
   const [dir, setDir] = useState<"asc" | "desc">("asc");
   const [favOnly, setFavOnly] = useState(false);
+  const [deckFilter, setDeckFilter] = useState<"any" | "in" | "out">("any");
+  const decksFor = (n: string) => deckUsage[n] ?? [];
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
   // Local editable copy so qty changes / removals reflect instantly.
@@ -112,6 +116,11 @@ export function CollectionView({
     if (color !== "all") v = v.filter((d) => d.color === color);
     if (type !== "all") v = v.filter((d) => d.type === type);
     if (set !== "all") v = v.filter((d) => d.set === set);
+    if (deckFilter !== "any")
+      v = v.filter((d) => {
+        const inDeck = (deckUsage[d.row.normalizedName] ?? []).length > 0;
+        return deckFilter === "in" ? inDeck : !inDeck;
+      });
     // Ascending-by-key comparator; direction applied after.
     const base = (a: typeof v[number], b: typeof v[number]): number => {
       switch (sort) {
@@ -137,7 +146,7 @@ export function CollectionView({
       return primary !== 0 ? primary : a.row.name.localeCompare(b.row.name);
     });
     return sorted.map((d) => d.row);
-  }, [decorated, favOnly, favs, color, type, set, sort, dir]);
+  }, [decorated, favOnly, favs, color, type, set, sort, dir, deckFilter, deckUsage]);
 
   const close = useCallback(() => setZoom(null), []);
   const step = useCallback(
@@ -187,6 +196,12 @@ export function CollectionView({
           options={[{ value: "all", label: "All types" }, ...TYPE_BUCKETS.map((t) => ({ value: t, label: t }))]} />
         <Select label="Set" value={set} onChange={setSet}
           options={[{ value: "all", label: "All sets" }, ...setOptions]} />
+        <Select label="Decks" value={deckFilter} onChange={(v) => setDeckFilter(v as "any" | "in" | "out")}
+          options={[
+            { value: "any", label: "Any" },
+            { value: "in", label: "In a deck" },
+            { value: "out", label: "Not in a deck" },
+          ]} />
         <Select label="Sort" value={sort} onChange={(v) => setSort(v as SortKey)}
           options={[
             { value: "name", label: "Name" },
@@ -267,6 +282,14 @@ export function CollectionView({
                 onChange={(f) => onFavChange(r.normalizedName, f)}
                 className="absolute left-1 top-1 rounded-md bg-black/60 px-1.5 text-base"
               />
+              {decksFor(r.normalizedName).length > 0 && (
+                <span
+                  className="pointer-events-none absolute bottom-1 left-1 z-10 rounded-md bg-[var(--purple)] px-1.5 py-0.5 text-[10px] font-bold text-white shadow"
+                  title={`In: ${decksFor(r.normalizedName).map((d) => d.name).join(", ")}`}
+                >
+                  🃏 {decksFor(r.normalizedName).length}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -293,10 +316,19 @@ export function CollectionView({
                   <span className="font-medium hover:text-accent">{r.name}</span>
                   <ManaCost cost={r.manaCost} />
                 </span>
-                <span className="flex items-center gap-1.5 text-xs text-muted">
+                <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
                   <ColorDots identity={r.colorIdentity} />
                   <SetSymbol setCode={r.setCode} rarity={r.rarity} className="text-sm" />
                   {r.typeLine}
+                  {decksFor(r.normalizedName).length > 0 && (
+                    <span
+                      className="rounded-full bg-[var(--purple)]/15 px-1.5 py-0.5 font-semibold text-[var(--purple-deep)]"
+                      title={decksFor(r.normalizedName).map((d) => d.name).join(", ")}
+                    >
+                      🃏 in {decksFor(r.normalizedName).length} deck
+                      {decksFor(r.normalizedName).length === 1 ? "" : "s"}
+                    </span>
+                  )}
                 </span>
               </button>
               <div className="text-right text-sm">
@@ -346,6 +378,20 @@ export function CollectionView({
                 {zoomed.name}{zoomed.foil ? " (foil)" : ""}{zoomed.condition ? ` · ${zoomed.condition}` : ""}
               </span>
             </div>
+            {decksFor(zoomed.normalizedName).length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+                <span className="text-muted">🃏 In decks:</span>
+                {decksFor(zoomed.normalizedName).map((d) => (
+                  <a
+                    key={d.id}
+                    href={`/decks/${d.id}`}
+                    className="rounded-full bg-[var(--purple)]/15 px-2 py-0.5 font-semibold text-[var(--purple-deep)] hover:underline"
+                  >
+                    {d.name}
+                  </a>
+                ))}
+              </div>
+            )}
             {/* Quantity editor */}
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
               <button
