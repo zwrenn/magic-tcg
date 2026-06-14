@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 
-export function GateForm({ members, next }: { members: string[]; next: string }) {
+export function GateForm({
+  members,
+  next,
+  requirePass = true,
+}: {
+  members: string[];
+  next: string;
+  requirePass?: boolean;
+}) {
   const [name, setName] = useState<string | null>(null);
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -58,17 +66,21 @@ export function GateForm({ members, next }: { members: string[]; next: string })
         ))}
       </div>
 
-      <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted">
-        Passphrase
-      </label>
-      <input
-        type="password"
-        value={passphrase}
-        onChange={(e) => setPassphrase(e.target.value)}
-        autoComplete="current-password"
-        className="mb-4 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-accent"
-        placeholder="shared pod passphrase"
-      />
+      {requirePass && (
+        <>
+          <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted">
+            Passphrase
+          </label>
+          <input
+            type="password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            autoComplete="current-password"
+            className="mb-4 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none focus:border-accent"
+            placeholder="shared pod passphrase"
+          />
+        </>
+      )}
 
       {error && <p className="mb-3 text-sm text-bad">{error}</p>}
 

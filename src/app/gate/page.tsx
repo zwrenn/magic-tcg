@@ -1,4 +1,5 @@
 import { POD_MEMBERS } from "@/lib/pod";
+import { passphraseRequired } from "@/lib/auth-shared";
 import { GateForm } from "./gate-form";
 
 export default async function GatePage({
@@ -26,7 +27,11 @@ export default async function GatePage({
             Who owns what, across the playgroup.
           </p>
         </div>
-        <GateForm members={[...POD_MEMBERS]} next={safeNext} />
+        <GateForm
+          members={[...POD_MEMBERS]}
+          next={safeNext}
+          requirePass={passphraseRequired()}
+        />
       </div>
     </main>
   );

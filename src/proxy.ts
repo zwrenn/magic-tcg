@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE, USER_COOKIE, expectedAuthToken } from "@/lib/auth-shared";
+import {
+  AUTH_COOKIE,
+  USER_COOKIE,
+  expectedAuthToken,
+  passphraseRequired,
+} from "@/lib/auth-shared";
 
 /**
  * Passphrase gate (Next 16 "proxy" convention — formerly middleware). Every
@@ -11,6 +16,7 @@ export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   const authed =
+    !passphraseRequired() ||
     req.cookies.get(AUTH_COOKIE)?.value === (await expectedAuthToken());
   const hasProfile = Boolean(req.cookies.get(USER_COOKIE)?.value);
 

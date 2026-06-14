@@ -21,3 +21,11 @@ export async function expectedAuthToken(): Promise<string> {
   // Salt so the cookie isn't a bare passphrase hash sitting in a rainbow table.
   return sha256Hex(`the-pod::${passphrase}`);
 }
+
+/**
+ * Whether a passphrase is required at all. If POD_PASSPHRASE is unset/blank,
+ * the gate just asks "who are you?" (no password).
+ */
+export function passphraseRequired(): boolean {
+  return Boolean(process.env.POD_PASSPHRASE && process.env.POD_PASSPHRASE.trim());
+}

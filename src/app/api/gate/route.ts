@@ -3,6 +3,7 @@ import {
   AUTH_COOKIE,
   USER_COOKIE,
   expectedAuthToken,
+  passphraseRequired,
   sha256Hex,
 } from "@/lib/auth-shared";
 import { isPodMember } from "@/lib/pod";
@@ -23,10 +24,12 @@ export async function POST(req: Request) {
     return Response.json({ error: "Pick who you are first." }, { status: 400 });
   }
 
-  const submitted = await sha256Hex(`the-pod::${passphrase}`);
   const expected = await expectedAuthToken();
-  if (submitted !== expected) {
-    return Response.json({ error: "Wrong passphrase." }, { status: 401 });
+  if (passphraseRequired()) {
+    const submitted = await sha256Hex(`the-pod::${passphrase}`);
+    if (submitted !== expected) {
+      return Response.json({ error: "Wrong passphrase." }, { status: 401 });
+    }
   }
 
   const jar = await cookies();
