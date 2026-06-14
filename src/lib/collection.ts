@@ -1,7 +1,44 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { ensureCardsByScryfallId, ensureCardsByName } from "./scryfall";
+import { normalizeName } from "./normalize";
+
+/** Remove every copy of a card (any printing/finish) from a user's collection,
+ *  matched by name. Returns how many rows were removed. */
+export async function removeCardByName(
+  userId: number,
+  name: string,
+): Promise<number> {
+  const key = normalizeName(name);
+  if (!key) return 0;
+  const cardIds = (
+    await db
+      .select({ id: schema.cards.id })
+      .from(schema.cards)
+      .where(eq(schema.cards.normalizedName, key))
+  ).map((c) => c.id);
+  if (cardIds.length === 0) return 0;
+
+  const [before] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.collectionItems)
+    .where(
+      and(
+        eq(schema.collectionItems.userId, userId),
+        inArray(schema.collectionItems.cardId, cardIds),
+      ),
+    );
+  await db
+    .delete(schema.collectionItems)
+    .where(
+      and(
+        eq(schema.collectionItems.userId, userId),
+        inArray(schema.collectionItems.cardId, cardIds),
+      ),
+    );
+  return before?.n ?? 0;
+}
 
 /**
  * Quick-add a card to a collection by NAME (any printing counts). Used by the

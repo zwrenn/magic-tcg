@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { QuickAddButton } from "./quick-add-button";
+import { RemoveCardButton } from "./remove-card-button";
 
 type ZoomCard = { name: string; image: string | null };
 
@@ -85,6 +86,7 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
             )}
             <div className="flex flex-wrap items-center justify-center gap-2">
               <QuickAddButton name={card.name} label="+ Add to collection" className="px-4 py-1.5 text-sm" />
+              <RemoveCardButton name={card.name} />
               <a
                 href={`https://scryfall.com/search?q=${encodeURIComponent(`!"${card.name}"`)}`}
                 target="_blank"
