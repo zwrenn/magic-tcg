@@ -4,7 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { QuickAddButton } from "./quick-add-button";
 import { RemoveCardButton } from "./remove-card-button";
 
-type ZoomCard = { name: string; image: string | null; key?: string };
+type ZoomCard = {
+  name: string;
+  image: string | null;
+  key?: string;
+  /** Viewer owns ≥1 copy — enables "Remove from collection" even in read-only zooms. */
+  viewerOwns?: boolean;
+};
 /** Lets a list owner expose a per-card "mark as proxy" toggle inside the zoom. */
 type ProxyController = {
   /** Keys currently flagged proxy, to seed the toggle's initial state. */
@@ -125,6 +131,9 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                   <QuickAddButton name={card.name} label="+ Add to my collection" className="px-4 py-1.5 text-sm" />
                   <RemoveCardButton name={card.name} />
                 </>
+              )}
+              {!zoom.allowEdit && card.viewerOwns && (
+                <RemoveCardButton name={card.name} />
               )}
               {zoom.proxy && card.key && (
                 <button

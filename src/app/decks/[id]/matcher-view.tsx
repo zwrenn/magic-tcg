@@ -138,8 +138,9 @@ export function MatcherView({
         name: r.card.name,
         image: r.card.image,
         key: r.card.normalizedName,
+        viewerOwns: r.card.owners.some((o) => o.name === viewerName),
       })),
-    [ordered],
+    [ordered, viewerName],
   );
   const zoomIndex = useMemo(() => {
     const m = new Map<string, number>();
