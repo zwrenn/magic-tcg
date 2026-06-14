@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { globalSearch } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
+import { getDeckUsage } from "@/lib/decks";
 import { CardZoomButton } from "@/components/card-zoom";
 import { FavoriteStar } from "@/components/favorite-star";
 import { QuickAddButton } from "@/components/quick-add-button";
@@ -14,7 +16,10 @@ export default async function SearchPage({
   const viewer = await requireUser();
   const { q = "" } = await searchParams;
   const results = q.trim() ? await globalSearch(q) : [];
-  const favorites = await getFavorites(viewer.id);
+  const [favorites, deckUsage] = await Promise.all([
+    getFavorites(viewer.id),
+    getDeckUsage(),
+  ]);
   const label = (name: string) => (name === viewer.name ? "you" : name);
 
   return (
@@ -48,54 +53,91 @@ export default async function SearchPage({
 
       {results.length > 0 && (
         <ul className="mt-6 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-          {results.map((r) => (
-            <li key={r.normalizedName} className="flex items-center gap-3 px-3 py-2">
-              <CardZoomButton name={r.name} image={r.image} className="shrink-0">
-                {r.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={r.image}
-                    alt={r.name}
-                    loading="lazy"
-                    className="h-12 w-9 rounded-[3px] border border-border object-cover"
-                  />
-                ) : (
-                  <span className="grid h-12 w-9 place-items-center rounded-[3px] border border-border bg-surface-2 text-[8px] text-muted">
-                    no img
-                  </span>
-                )}
-              </CardZoomButton>
-              <FavoriteStar
-                name={r.name}
-                initial={favorites.has(r.normalizedName)}
-                className="text-lg"
-              />
-              <CardZoomButton
-                name={r.name}
-                image={r.image}
-                className="min-w-0 flex-1 truncate text-left font-medium hover:text-accent"
-              >
-                {r.name}
-              </CardZoomButton>
-              <div className="flex flex-wrap justify-end gap-1">
-                {r.owners.length === 0 ? (
-                  <span className="text-xs text-muted">nobody has it</span>
-                ) : (
-                  r.owners.map((o) => (
-                    <span
-                      key={o.name}
-                      className="rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                      title={o.foil ? "has a foil copy" : undefined}
-                    >
-                      {label(o.name)} ×{o.qty}
-                      {o.foil ? " ✦" : ""}
+          {results.map((r) => {
+            const decks = deckUsage[r.normalizedName] ?? [];
+            const deckOwners = new Set(decks.map((d) => d.owner));
+            return (
+              <li key={r.normalizedName} className="flex items-start gap-3 px-3 py-2">
+                <CardZoomButton name={r.name} image={r.image} className="shrink-0">
+                  {r.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.image}
+                      alt={r.name}
+                      loading="lazy"
+                      className="h-12 w-9 rounded-[3px] border border-border object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-12 w-9 place-items-center rounded-[3px] border border-border bg-surface-2 text-[8px] text-muted">
+                      no img
                     </span>
-                  ))
-                )}
-              </div>
-              <QuickAddButton name={r.name} />
-            </li>
-          ))}
+                  )}
+                </CardZoomButton>
+                <FavoriteStar
+                  name={r.name}
+                  initial={favorites.has(r.normalizedName)}
+                  className="mt-1 text-lg"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardZoomButton
+                      name={r.name}
+                      image={r.image}
+                      className="min-w-0 flex-1 truncate text-left font-medium hover:text-accent"
+                    >
+                      {r.name}
+                    </CardZoomButton>
+                    <div className="flex flex-wrap justify-end gap-1">
+                      {r.owners.length === 0 ? (
+                        <span className="text-xs text-muted">nobody has it</span>
+                      ) : (
+                        r.owners.map((o) => {
+                          const committed = deckOwners.has(o.name);
+                          return (
+                            <span
+                              key={o.name}
+                              className={`rounded-full px-2 py-0.5 text-xs ${
+                                committed
+                                  ? "bg-[var(--purple)]/15 text-[var(--purple-deep)]"
+                                  : "bg-surface-2"
+                              }`}
+                              title={
+                                committed
+                                  ? `${o.name} runs this in a deck — likely in use`
+                                  : o.foil
+                                    ? "has a foil copy"
+                                    : undefined
+                              }
+                            >
+                              {label(o.name)} ×{o.qty}
+                              {o.foil ? " ✦" : ""}
+                              {committed ? " 🃏" : ""}
+                            </span>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                  {decks.length > 0 && (
+                    <p className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-muted">
+                      🃏 in a deck:
+                      {decks.map((d) => (
+                        <Link
+                          key={d.id}
+                          href={`/decks/${d.id}`}
+                          className="rounded-full bg-[var(--purple)]/10 px-1.5 text-[var(--purple-deep)] hover:underline"
+                        >
+                          {d.name} ({label(d.owner)})
+                        </Link>
+                      ))}
+                      <span className="text-subtle">— ask before borrowing</span>
+                    </p>
+                  )}
+                </div>
+                <QuickAddButton name={r.name} />
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>

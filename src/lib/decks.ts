@@ -201,22 +201,25 @@ export async function getBuildableDecks(): Promise<BuildableDeck[]> {
  * pod. Keyed by normalizedName → list of decks. Used to flag collection cards
  * that are committed to a deck.
  */
-export async function getDeckUsage(): Promise<
-  Record<string, { id: number; name: string }[]>
-> {
+export type DeckUse = { id: number; name: string; owner: string };
+
+export async function getDeckUsage(): Promise<Record<string, DeckUse[]>> {
   const rows = await db
     .select({
       normalizedName: schema.deckCards.normalizedName,
       id: schema.decks.id,
       name: schema.decks.name,
+      owner: schema.users.name,
     })
     .from(schema.deckCards)
-    .innerJoin(schema.decks, eq(schema.decks.id, schema.deckCards.deckId));
+    .innerJoin(schema.decks, eq(schema.decks.id, schema.deckCards.deckId))
+    .innerJoin(schema.users, eq(schema.users.id, schema.decks.ownerUserId));
 
-  const map: Record<string, { id: number; name: string }[]> = {};
+  const map: Record<string, DeckUse[]> = {};
   for (const r of rows) {
     const list = (map[r.normalizedName] ??= []);
-    if (!list.some((d) => d.id === r.id)) list.push({ id: r.id, name: r.name });
+    if (!list.some((d) => d.id === r.id))
+      list.push({ id: r.id, name: r.name, owner: r.owner });
   }
   return map;
 }

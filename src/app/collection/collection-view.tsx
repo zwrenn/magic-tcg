@@ -33,7 +33,7 @@ export function CollectionView({
   limit: number;
   query: string;
   favorites: string[];
-  deckUsage?: Record<string, { id: number; name: string }[]>;
+  deckUsage?: Record<string, { id: number; name: string; owner?: string }[]>;
 }) {
   const [view, setView] = useState<ViewMode>("grid");
   const [color, setColor] = useState<ColorBucket | "all">("all");

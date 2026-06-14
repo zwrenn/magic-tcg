@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth";
+import { getPodStats } from "@/lib/pod-stats";
 
 const BADGES = [
   { label: "BEST VIEWED IN NETSCAPE", bg: "linear-gradient(180deg,#3f6f8f,#274d6a)", color: "#dff0ff" },
@@ -8,17 +9,18 @@ const BADGES = [
   { label: "✦ POD WEBRING ✦", bg: "linear-gradient(180deg,#7351c0,#4e2f92)", color: "#f0e6ff" },
 ];
 
-const HITS = ["0", "0", "0", "1", "3", "3", "7", "2"];
-
 const BLINKIES = [
   { label: "✨ 100% GLITTER ✨", bg: "linear-gradient(180deg,#ff9bc8,#ff5db5)", color: "#fff" },
-  { label: "♥ ADOPT A MANA ORB ♥", bg: "linear-gradient(180deg,#7ee06a,#4e9e2c)", color: "#fff" },
+  { label: "♥ POWERED BY SCRYFALL ♥", bg: "linear-gradient(180deg,#7ee06a,#4e9e2c)", color: "#fff" },
   { label: "★ EST. 2026 ★", bg: "linear-gradient(180deg,#ffe06a,#ffce3a)", color: "#5a4410" },
 ];
 
 export async function Footer() {
   const user = await getCurrentUser();
   if (!user) return null;
+  const stats = await getPodStats();
+  // A real number, styled like the old odometer (padded to 6 digits).
+  const cards = String(stats.cards).padStart(6, "0").split("");
 
   return (
     <footer className="mx-auto mt-8 w-full max-w-6xl px-3 pb-10">
@@ -49,13 +51,13 @@ export async function Footer() {
           ))}
         </div>
 
-        {/* Hit counter */}
+        {/* Real card-count odometer */}
         <div className="flex items-center gap-2">
           <span className="pixel text-xs uppercase tracking-widest text-muted">
-            Visitors
+            Cards in the vault
           </span>
           <span className="flex gap-px">
-            {HITS.map((d, i) => (
+            {cards.map((d, i) => (
               <span key={i} className="lcd lcd-green px-1 text-lg tabular-nums">
                 {d}
               </span>
@@ -64,7 +66,7 @@ export async function Footer() {
         </div>
 
         <p className="pixel text-xs text-subtle">
-          The Pod · est. 2026 · brewed with EB Garamond &amp; questionable mana bases
+          The Pod · est. 2026 · brewed with questionable mana bases
         </p>
       </div>
     </footer>
