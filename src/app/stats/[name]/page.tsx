@@ -9,6 +9,7 @@ import {
   typeBucket,
 } from "@/lib/card-types";
 import { CardZoomButton } from "@/components/card-zoom";
+import { getTrophies } from "@/lib/trophies";
 
 const COLOR_HEX: Record<string, string> = {
   White: "#f5f0d8",
@@ -31,10 +32,12 @@ export default async function PlayerStatsPage({
   if (!who) notFound();
   const isSelf = who.id === viewer.id;
 
-  const [totals, rows] = await Promise.all([
+  const [totals, rows, trophies] = await Promise.all([
     collectionTotals(who.id),
     searchUserCollection(who.id, "", 100000),
+    getTrophies(who.id),
   ]);
+  const earnedCount = trophies.filter((t) => t.earned).length;
 
   if (totals.distinct === 0) {
     return (
@@ -90,6 +93,43 @@ export default async function PlayerStatsPage({
         <Stat label="Est. value" value={`$${totals.valueUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} accent />
       </div>
 
+      {/* Trophy cabinet */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="t-hero text-xl">🏆 Trophy Cabinet</h2>
+          <span className="lcd lcd-gold text-sm tabular-nums">
+            {earnedCount} / {trophies.length}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {trophies.map((t) => (
+            <div
+              key={t.id}
+              title={t.earned ? `Earned: ${t.desc}` : t.desc}
+              className={`card flex items-center gap-3 p-3 ${t.earned ? "trophy-earned" : "trophy-locked"}`}
+            >
+              <span className={`text-3xl ${t.earned ? "sparkle" : ""}`}>{t.icon}</span>
+              <div className="min-w-0">
+                <div className="truncate font-semibold text-[#3a3358]">{t.name}</div>
+                {t.earned ? (
+                  <div className="text-xs font-semibold text-[var(--green-deep)]">Earned!</div>
+                ) : (
+                  <>
+                    <div className="truncate text-[11px] text-[#3a3358]/70">{t.desc}</div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+                      <div
+                        className="h-full rounded-full bg-[var(--purple)]"
+                        style={{ width: `${Math.round(t.progress * 100)}%` }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="mt-8 grid gap-8 md:grid-cols-2">
         <section>
           <h2 className="t-label mb-3">By color</h2>
@@ -117,7 +157,7 @@ export default async function PlayerStatsPage({
           <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {topValuable.map((r, i) => (
               <li key={`${r.name}-${i}`}>
-                <CardZoomButton name={r.name} image={r.image} allowEdit={isSelf} className="block w-full">
+                <CardZoomButton name={r.name} image={r.image} allowEdit={isSelf} holo={r.foil} className="block w-full">
                   {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.image} alt={r.name} loading="lazy" className="aspect-[488/680] w-full rounded-lg border border-border object-cover" />

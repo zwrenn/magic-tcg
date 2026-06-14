@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getRoster } from "@/lib/pod-stats";
+import { PodPet } from "@/components/pod-pet";
 
 export async function Sidebar({
   currentUser,
@@ -61,6 +62,9 @@ export async function Sidebar({
           })}
         </ul>
       </div>
+
+      {/* Mascot */}
+      <PodPet />
 
       {/* Tip */}
       <div className="module p-3">

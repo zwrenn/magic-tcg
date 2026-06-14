@@ -64,7 +64,7 @@ export default async function SearchPage({
             const decks = deckUsage[r.normalizedName] ?? [];
             return (
               <li key={r.normalizedName} className="flex items-start gap-3 px-3 py-2">
-                <CardZoomButton name={r.name} image={r.image} className="shrink-0">
+                <CardZoomButton name={r.name} image={r.image} holo={r.owners.some((o) => o.foil)} className="shrink-0">
                   {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -89,6 +89,7 @@ export default async function SearchPage({
                     <CardZoomButton
                       name={r.name}
                       image={r.image}
+                      holo={r.owners.some((o) => o.foil)}
                       className="min-w-0 flex-1 truncate text-left font-medium hover:text-accent"
                     >
                       {r.name}

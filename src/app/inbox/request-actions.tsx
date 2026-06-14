@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { fireConfetti } from "@/components/confetti";
 
 const TONE: Record<string, string> = {
   pending: "text-warn",
@@ -46,7 +47,14 @@ export function RequestStatus({
   if (role === "in") {
     return (
       <div className="flex shrink-0 gap-2">
-        <button disabled={busy} onClick={() => act("given")} className="gel gel-green !px-3 !py-1 !text-xs">
+        <button
+          disabled={busy}
+          onClick={(e) => {
+            fireConfetti(e.clientX, e.clientY);
+            act("given");
+          }}
+          className="gel gel-green !px-3 !py-1 !text-xs"
+        >
           ✓ Gave it
         </button>
         <button disabled={busy} onClick={() => act("declined")} className="gel gel-pink !px-3 !py-1 !text-xs">

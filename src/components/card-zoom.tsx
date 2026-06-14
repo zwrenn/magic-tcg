@@ -11,6 +11,8 @@ type ZoomCard = {
   key?: string;
   /** Viewer owns ≥1 copy — enables "Remove from collection" even in read-only zooms. */
   viewerOwns?: boolean;
+  /** Render a holographic foil shimmer over the card. */
+  holo?: boolean;
 };
 /** Lets a list owner expose a per-card "mark as proxy" toggle inside the zoom. */
 type ProxyController = {
@@ -123,12 +125,14 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
           )}
           <div className="flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
             {card.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={card.image}
-                alt={card.name}
-                className="max-h-[80vh] w-auto rounded-2xl border border-border shadow-2xl"
-              />
+              <div className={`relative rounded-2xl ${card.holo ? "foil-frame" : ""}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={card.image}
+                  alt={card.name}
+                  className="block max-h-[80vh] w-auto rounded-2xl border border-border shadow-2xl"
+                />
+              </div>
             ) : (
               <div className="rounded-2xl border border-border bg-surface p-8 text-center">
                 {card.name}
@@ -219,6 +223,7 @@ export function CardZoomButton({
   className = "",
   title,
   allowEdit = true,
+  holo = false,
 }: {
   name: string;
   image: string | null;
@@ -226,13 +231,14 @@ export function CardZoomButton({
   className?: string;
   title?: string;
   allowEdit?: boolean;
+  holo?: boolean;
 }) {
   const { open } = useCardZoom();
   return (
     <button
       type="button"
       title={title ?? name}
-      onClick={() => open({ name, image }, { allowEdit })}
+      onClick={() => open({ name, image, holo }, { allowEdit })}
       className={className}
     >
       {children}

@@ -207,6 +207,7 @@ export function MatcherView({
         image: r.card.image,
         key: r.card.normalizedName,
         viewerOwns: r.card.owners.some((o) => o.name === viewerName),
+        holo: r.card.owners.some((o) => o.foil),
       })),
     [ordered, viewerName],
   );

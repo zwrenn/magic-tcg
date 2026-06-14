@@ -363,6 +363,38 @@ h1, h2, h3 {
   background: linear-gradient(90deg, #f5f0d8 0% 20%, #9ed0ec 20% 40%, #5a5550 40% 60%, #f0a18a 60% 80%, #9bd3ae 80% 100%);
 }
 
+/* ---------- Confetti burst ---------- */
+.confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 10000; overflow: hidden; }
+.confetti-bit {
+  position: absolute; top: 0; left: 0; will-change: transform, opacity;
+  animation: confetti-burst var(--dur, 2.2s) ease-out forwards;
+}
+@keyframes confetti-burst {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx, 0), var(--dy, 60vh)) rotate(var(--cr, 540deg)) scale(0.9); opacity: 0; }
+}
+
+/* ---------- Trophy cabinet ---------- */
+@keyframes trophy-shine { to { background-position: 200% center; } }
+.trophy-earned {
+  background: linear-gradient(135deg, #fff7d6, #ffe9a8 42%, #ffd23f 52%, #fff7d6);
+  background-size: 200% auto;
+  animation: trophy-shine 4s linear infinite;
+  border-color: var(--yellow-deep) !important;
+  box-shadow: 0 4px 0 rgba(224, 169, 26, 0.45), 0 0 14px rgba(255, 206, 58, 0.55);
+}
+.trophy-locked { filter: grayscale(1); opacity: 0.5; }
+
+/* ---------- Pod pet ---------- */
+@keyframes pet-bob { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-7px) rotate(1.5deg); } }
+@keyframes pet-hop { 0% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-20px) scale(1.08, 0.92); } 60% { transform: translateY(0) scale(0.94, 1.06); } 100% { transform: translateY(0) scale(1, 1); } }
+@keyframes pet-blink { 0%, 91%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.08); } }
+@keyframes heart-float { 0% { opacity: 1; transform: translate(-50%, 0) scale(0.5) rotate(0deg); } 100% { opacity: 0; transform: translate(calc(-50% + var(--hx, 0px)), -70px) scale(1.15) rotate(var(--hr, 0deg)); } }
+.pet-bob { animation: pet-bob 3s ease-in-out infinite; }
+.pet-hop { animation: pet-hop 0.5s ease-out; }
+.pet-eye { transform-origin: center; animation: pet-blink 4.5s infinite; }
+.pet-heart { position: absolute; left: 50%; bottom: 45%; pointer-events: none; font-size: 18px; animation: heart-float 1s ease-out forwards; }
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
