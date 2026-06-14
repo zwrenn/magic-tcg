@@ -31,6 +31,6 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // Run on everything except the gate, its API, Next internals and static files.
   matcher: [
-    "/((?!gate|api/gate|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!gate|api/gate|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|ogg|wav|m4a)$).*)",
   ],
 };

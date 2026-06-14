@@ -25,7 +25,7 @@ export default async function InboxPage() {
         ) : (
           <ul className="card divide-y divide-border !p-0">
             {incoming.map((r) => (
-              <Row key={r.id} r={r} role="in" who={`${r.otherName} wants`} />
+              <Row key={r.id} r={r} role="in" who={`${r.otherName} wants it`} />
             ))}
           </ul>
         )}
@@ -41,7 +41,7 @@ export default async function InboxPage() {
         ) : (
           <ul className="card divide-y divide-border !p-0">
             {outgoing.map((r) => (
-              <Row key={r.id} r={r} role="out" who={`asked ${r.otherName}`} />
+              <Row key={r.id} r={r} role="out" who={`you asked ${r.otherName}`} />
             ))}
           </ul>
         )}
@@ -67,7 +67,7 @@ function Row({ r, role, who }: { r: RequestRow; role: "in" | "out"; who: string 
           {who}
           {r.deckName && (
             <>
-              {" "}for{" "}
+              {" · for deck: "}
               {r.deckId ? (
                 <Link href={`/decks/${r.deckId}`} className="text-accent hover:underline">
                   {r.deckName}

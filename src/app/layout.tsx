@@ -4,6 +4,7 @@ import { SiteChrome } from "@/components/site-chrome";
 import { Footer } from "@/components/footer";
 import { CardZoomProvider } from "@/components/card-zoom";
 import { CursorSparkles } from "@/components/cursor-sparkles";
+import { MusicPlayer } from "@/components/music-player";
 import "./globals.css";
 
 // Nunito body · Fredoka bubbly headings · VT323 pixel counters.
@@ -56,6 +57,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <CursorSparkles />
+        <MusicPlayer />
         <CardZoomProvider>
           <SiteChrome />
           {children}
