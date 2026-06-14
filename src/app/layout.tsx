@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono, Cinzel, Cinzel_Decorative } from "next/font/google";
-import { Header } from "@/components/header";
+import { Nunito, Fredoka, IBM_Plex_Mono, VT323 } from "next/font/google";
+import { SiteChrome } from "@/components/site-chrome";
+import { Footer } from "@/components/footer";
 import { CardZoomProvider } from "@/components/card-zoom";
+import { CursorSparkles } from "@/components/cursor-sparkles";
 import "./globals.css";
 
-// Inter body · IBM Plex Mono chrome/labels · Cinzel fantasy serif for titles.
-const inter = Inter({
-  variable: "--font-sans",
+// Nunito body · Fredoka bubbly headings · VT323 pixel counters.
+const nunito = Nunito({
+  variable: "--font-body",
   subsets: ["latin"],
+  display: "swap",
+});
+const fredoka = Fredoka({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 const plexMono = IBM_Plex_Mono({
@@ -16,22 +24,16 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
-const cinzel = Cinzel({
-  variable: "--font-display",
+const vt323 = VT323({
+  variable: "--font-pixel",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
-const cinzelDecorative = Cinzel_Decorative({
-  variable: "--font-ornate",
-  subsets: ["latin"],
-  weight: ["700", "900"],
+  weight: ["400"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "The Pod",
-  description: "What does the pod already own? Card sharing for our MTG playgroup.",
+  description: "Ye olde shared commander collection — what does the pod already own?",
 };
 
 export default function RootLayout({
@@ -40,10 +42,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plexMono.variable} ${cinzel.variable} ${cinzelDecorative.variable} h-full antialiased`}
+      className={`${nunito.variable} ${fredoka.variable} ${plexMono.variable} ${vt323.variable} h-full antialiased`}
     >
       <head>
-        {/* Authentic MTG mana symbols (mana-font) + set symbols (keyrune) */}
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css"
@@ -54,9 +55,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
+        <CursorSparkles />
         <CardZoomProvider>
-          <Header />
+          <SiteChrome />
           {children}
+          <Footer />
         </CardZoomProvider>
       </body>
     </html>
