@@ -4,6 +4,7 @@ import { db, schema } from "@/db";
 import type { ParsedCard } from "./deck-parser";
 import { ensureCardsByName } from "./scryfall";
 import { isBasicLand } from "./card-types";
+import { normalizeName } from "./normalize";
 
 export type DeckSource = "paste" | "archidekt" | "moxfield_text" | "edhrec";
 
@@ -274,6 +275,91 @@ export async function setDeckCardProxy(
       ),
     );
   return true;
+}
+
+/** Owner-only: verify the deck belongs to userId. */
+async function ownsDeck(userId: number, deckId: number): Promise<boolean> {
+  const [deck] = await db
+    .select({ owner: schema.decks.ownerUserId })
+    .from(schema.decks)
+    .where(eq(schema.decks.id, deckId))
+    .limit(1);
+  return !!deck && deck.owner === userId;
+}
+
+/** Remove a card from a deck entirely — only the deck owner may do this. */
+export async function removeDeckCard(
+  userId: number,
+  deckId: number,
+  normalizedName: string,
+): Promise<boolean> {
+  if (!(await ownsDeck(userId, deckId))) return false;
+  await db
+    .delete(schema.deckCards)
+    .where(
+      and(
+        eq(schema.deckCards.deckId, deckId),
+        eq(schema.deckCards.normalizedName, normalizedName),
+      ),
+    );
+  return true;
+}
+
+/**
+ * Add a card to a deck (or bump its quantity if already present) — owner only.
+ * Resolves the name via Scryfall so the matcher gets image/type/etc. Returns
+ * an error string if the card name isn't a real card.
+ */
+export async function addDeckCard(
+  userId: number,
+  deckId: number,
+  name: string,
+  quantity = 1,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await ownsDeck(userId, deckId))) return { ok: false, error: "Not allowed" };
+
+  const normalized = normalizeName(name);
+  if (!normalized) return { ok: false, error: "Enter a card name" };
+
+  // Resolve + warm the card cache; if Scryfall doesn't know it, reject.
+  let canonicalName = name.trim();
+  try {
+    const resolved = await ensureCardsByName([name]);
+    const card = resolved.get(normalized);
+    if (card) canonicalName = card.name;
+    else return { ok: false, error: `No card called “${name.trim()}” found` };
+  } catch {
+    // Scryfall hiccup — allow the add with the typed name rather than blocking.
+  }
+
+  const qty = Math.max(1, Math.min(99, Math.floor(quantity) || 1));
+  const [existing] = await db
+    .select({ id: schema.deckCards.id, quantity: schema.deckCards.quantity })
+    .from(schema.deckCards)
+    .where(
+      and(
+        eq(schema.deckCards.deckId, deckId),
+        eq(schema.deckCards.normalizedName, normalized),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(schema.deckCards)
+      .set({ quantity: existing.quantity + qty })
+      .where(eq(schema.deckCards.id, existing.id));
+  } else {
+    await db.insert(schema.deckCards).values({
+      deckId,
+      cardName: canonicalName,
+      normalizedName: normalized,
+      quantity: qty,
+      isCommander: false,
+      isProxy: false,
+    });
+  }
+  return { ok: true };
 }
 
 export async function deleteDeck(deckId: number): Promise<void> {

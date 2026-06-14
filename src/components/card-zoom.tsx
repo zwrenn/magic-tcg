@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { QuickAddButton } from "./quick-add-button";
 import { RemoveCardButton } from "./remove-card-button";
+import { RemoveFromDeckButton } from "./remove-from-deck-button";
 
 type ZoomCard = {
   name: string;
@@ -18,7 +19,13 @@ type ProxyController = {
   /** Persist + propagate a toggle for the given card key. */
   onToggle: (key: string, willBe: boolean) => void;
 };
-type ZoomOpts = { allowEdit?: boolean; proxy?: ProxyController };
+/** Lets the deck owner remove the card from the deck inside the zoom. */
+type DeckController = { id: number; onRemoved: (key: string) => void };
+type ZoomOpts = {
+  allowEdit?: boolean;
+  proxy?: ProxyController;
+  deck?: DeckController;
+};
 
 type ZoomState = {
   list: ZoomCard[];
@@ -26,6 +33,7 @@ type ZoomState = {
   allowEdit: boolean;
   proxy: ProxyController | null;
   proxySet: Set<string>;
+  deck: DeckController | null;
 };
 
 type ZoomApi = {
@@ -51,6 +59,7 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
         allowEdit: opts?.allowEdit ?? true,
         proxy: opts?.proxy ?? null,
         proxySet: new Set(opts?.proxy?.initial ?? []),
+        deck: opts?.deck ?? null,
       }),
     [],
   );
@@ -64,6 +73,7 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
               allowEdit: opts?.allowEdit ?? true,
               proxy: opts?.proxy ?? null,
               proxySet: new Set(opts?.proxy?.initial ?? []),
+              deck: opts?.deck ?? null,
             }
           : null,
       ),
@@ -137,6 +147,16 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                   <QuickAddButton name={card.name} label="✓ I have this" className="px-4 py-1.5 text-sm" />
                   {card.viewerOwns && <RemoveCardButton name={card.name} />}
                 </>
+              )}
+              {zoom.deck && card.key && (
+                <RemoveFromDeckButton
+                  deckId={zoom.deck.id}
+                  normalizedName={card.key}
+                  onRemoved={() => {
+                    zoom.deck!.onRemoved(card.key!);
+                    close();
+                  }}
+                />
               )}
               {zoom.proxy && card.key && (
                 <button

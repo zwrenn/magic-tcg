@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCardZoom } from "@/components/card-zoom";
 import { ManaCost, ColorDots } from "@/components/mana";
 import { SetSymbol } from "@/components/set-symbol";
@@ -37,7 +38,51 @@ export function MatcherView({
   const [proxies, setProxies] = useState<Set<string>>(
     () => new Set(cards.filter((c) => c.isProxy).map((c) => c.normalizedName)),
   );
+  // Cards removed this session (optimistic; reconciled by router.refresh()).
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const [addName, setAddName] = useState("");
+  const [addState, setAddState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [addError, setAddError] = useState("");
+  const router = useRouter();
   const { openList } = useCardZoom();
+
+  // Cards still in the deck after optimistic removals.
+  const liveCards = useMemo(
+    () => cards.filter((c) => !removed.has(c.normalizedName)),
+    [cards, removed],
+  );
+
+  function handleRemovedFromDeck(normalizedName: string) {
+    setRemoved((prev) => new Set(prev).add(normalizedName));
+    router.refresh();
+  }
+
+  async function addCard() {
+    const name = addName.trim();
+    if (!name || addState === "busy") return;
+    setAddState("busy");
+    setAddError("");
+    try {
+      const res = await fetch("/api/decks/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deckId, name }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAddState("error");
+        setAddError(data.error ?? "Could not add card");
+        return;
+      }
+      setAddName("");
+      setAddState("done");
+      router.refresh();
+      setTimeout(() => setAddState("idle"), 1500);
+    } catch {
+      setAddState("error");
+      setAddError("Network error");
+    }
+  }
 
   // Set + persist a card's proxy flag (called from the zoom's toggle).
   function applyProxy(normalizedName: string, willBe: boolean) {
@@ -72,7 +117,7 @@ export function MatcherView({
 
   // Apply exclusion, compute availability + section for every card once.
   const rows = useMemo(() => {
-    return cards.map((c) => {
+    return liveCards.map((c) => {
       const eff = excludeMine
         ? c.owners.filter((o) => o.name !== viewerName)
         : c.owners;
@@ -81,7 +126,7 @@ export function MatcherView({
         available >= c.needed ? "full" : available > 0 ? "partial" : "none";
       return { card: c, eff, available, section, bucket: typeBucket(c.typeLine) };
     });
-  }, [cards, excludeMine, viewerName]);
+  }, [liveCards, excludeMine, viewerName]);
 
   // Summary reflects the whole deck (independent of type/owner filters).
   const summary = useMemo(() => {
@@ -173,10 +218,11 @@ export function MatcherView({
   const openZoom = (normalizedName: string) =>
     openList(zoomList, zoomIndex.get(normalizedName) ?? 0, {
       allowEdit: false,
-      // Owners get a "mark as proxy" toggle inside the opened card.
+      // Owners get a "mark as proxy" toggle + "remove from deck" inside the card.
       proxy: canEdit
         ? { initial: [...proxies], onToggle: applyProxy }
         : undefined,
+      deck: canEdit ? { id: deckId, onRemoved: handleRemovedFromDeck } : undefined,
     });
 
   function copyMissing() {
@@ -363,6 +409,37 @@ export function MatcherView({
           </button>
         </div>
       </div>
+
+      {/* Add a card to the deck (owner only) */}
+      {canEdit && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            addCard();
+          }}
+          className="flex flex-wrap items-center gap-2 text-sm"
+        >
+          <input
+            value={addName}
+            onChange={(e) => {
+              setAddName(e.target.value);
+              if (addState === "error") setAddState("idle");
+            }}
+            placeholder="Add a card to this deck…"
+            className="flex-1 min-w-[12rem] rounded-lg border border-border bg-surface px-3 py-1.5 outline-none focus:border-accent"
+          />
+          <button
+            type="submit"
+            disabled={addState === "busy" || !addName.trim()}
+            className="rounded-lg border border-accent/60 bg-accent/10 px-3 py-1.5 font-medium text-accent transition hover:bg-accent/20 disabled:opacity-50"
+          >
+            {addState === "busy" ? "Adding…" : addState === "done" ? "Added ✓" : "+ Add card"}
+          </button>
+          {addState === "error" && (
+            <span className="text-xs text-bad">{addError}</span>
+          )}
+        </form>
+      )}
 
       {/* Sections */}
       {sections.map((s) => {
