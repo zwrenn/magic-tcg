@@ -26,7 +26,7 @@ export function Banner({ user, stats }: { user: User; stats: PodStats }) {
 
       {/* Title + tagline */}
       <div className="relative z-[5] min-w-0 flex-1">
-        <h1 className="t-hero shimmer-text relative z-[1] text-3xl leading-none sm:text-4xl">
+        <h1 className="t-wordart relative z-[5] text-4xl leading-none sm:text-5xl">
           The&nbsp;Pod
           <span className="sparkle ml-2 inline-block text-yellow-200">✦</span>
         </h1>

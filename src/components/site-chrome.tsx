@@ -30,6 +30,7 @@ export async function SiteChrome() {
         </div>
         <Marquee items={proclamations} />
       </div>
+      <div className="rainbow-divider mx-1 mt-3" />
     </header>
   );
 }

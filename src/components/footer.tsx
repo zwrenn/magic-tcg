@@ -10,6 +10,12 @@ const BADGES = [
 
 const HITS = ["0", "0", "0", "1", "3", "3", "7", "2"];
 
+const BLINKIES = [
+  { label: "✨ 100% GLITTER ✨", bg: "linear-gradient(180deg,#ff9bc8,#ff5db5)", color: "#fff" },
+  { label: "♥ ADOPT A MANA ORB ♥", bg: "linear-gradient(180deg,#7ee06a,#4e9e2c)", color: "#fff" },
+  { label: "★ EST. 2026 ★", bg: "linear-gradient(180deg,#ffe06a,#ffce3a)", color: "#5a4410" },
+];
+
 export async function Footer() {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -23,6 +29,19 @@ export async function Footer() {
             <span
               key={b.label}
               className="pixel rounded border border-[#2a1c0e] px-2 py-0.5 text-[10px] tracking-wide"
+              style={{ background: b.bg, color: b.color }}
+            >
+              {b.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Blinkies */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {BLINKIES.map((b, i) => (
+            <span
+              key={b.label}
+              className={`pixel rounded border-2 border-white px-2 py-0.5 text-[10px] tracking-wide shadow-[0_2px_0_rgba(0,0,0,0.15)] ${i % 2 === 0 ? "blinky" : ""}`}
               style={{ background: b.bg, color: b.color }}
             >
               {b.label}
