@@ -37,21 +37,21 @@ export function MatcherView({
   );
   const { openList } = useCardZoom();
 
-  async function toggleProxy(normalizedName: string) {
-    const next = new Set(proxies);
-    const willBe = !next.has(normalizedName);
-    if (willBe) next.add(normalizedName);
-    else next.delete(normalizedName);
-    setProxies(next);
-    try {
-      await fetch("/api/decks/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deckId, normalizedName, isProxy: willBe }),
-      });
-    } catch {
+  // Set + persist a card's proxy flag (called from the zoom's toggle).
+  function applyProxy(normalizedName: string, willBe: boolean) {
+    setProxies((prev) => {
+      const next = new Set(prev);
+      if (willBe) next.add(normalizedName);
+      else next.delete(normalizedName);
+      return next;
+    });
+    fetch("/api/decks/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deckId, normalizedName, isProxy: willBe }),
+    }).catch(() => {
       /* optimistic */
-    }
+    });
   }
 
   async function requestCard(owner: string, cardName: string) {
@@ -133,7 +133,12 @@ export function MatcherView({
     [visible],
   );
   const zoomList = useMemo(
-    () => ordered.map((r) => ({ name: r.card.name, image: r.card.image })),
+    () =>
+      ordered.map((r) => ({
+        name: r.card.name,
+        image: r.card.image,
+        key: r.card.normalizedName,
+      })),
     [ordered],
   );
   const zoomIndex = useMemo(() => {
@@ -142,7 +147,13 @@ export function MatcherView({
     return m;
   }, [ordered]);
   const openZoom = (normalizedName: string) =>
-    openList(zoomList, zoomIndex.get(normalizedName) ?? 0, { allowEdit: false });
+    openList(zoomList, zoomIndex.get(normalizedName) ?? 0, {
+      allowEdit: false,
+      // Owners get a "mark as proxy" toggle inside the opened card.
+      proxy: canEdit
+        ? { initial: [...proxies], onToggle: applyProxy }
+        : undefined,
+    });
 
   function copyMissing() {
     // Buylist = what the pod can't cover: shortfall per card.
@@ -338,18 +349,6 @@ export function MatcherView({
                       <SetSymbol setCode={r.card.setCode} rarity={r.card.rarity} className="text-sm" />
                       need {r.card.needed}
                       {r.card.typeLine ? ` · ${r.card.typeLine}` : ""}
-                      {canEdit && (
-                        <button
-                          onClick={() => toggleProxy(r.card.normalizedName)}
-                          className={`rounded-full border px-1.5 py-0.5 text-[10px] transition ${
-                            proxies.has(r.card.normalizedName)
-                              ? "border-[var(--purple)] text-[var(--purple-deep)]"
-                              : "border-border text-muted hover:border-[var(--purple)] hover:text-[var(--purple-deep)]"
-                          }`}
-                        >
-                          {proxies.has(r.card.normalizedName) ? "✓ proxy" : "mark proxy"}
-                        </button>
-                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-end gap-1">

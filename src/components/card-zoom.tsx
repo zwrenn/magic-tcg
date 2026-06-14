@@ -4,10 +4,23 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { QuickAddButton } from "./quick-add-button";
 import { RemoveCardButton } from "./remove-card-button";
 
-type ZoomCard = { name: string; image: string | null };
-type ZoomOpts = { allowEdit?: boolean };
+type ZoomCard = { name: string; image: string | null; key?: string };
+/** Lets a list owner expose a per-card "mark as proxy" toggle inside the zoom. */
+type ProxyController = {
+  /** Keys currently flagged proxy, to seed the toggle's initial state. */
+  initial: string[];
+  /** Persist + propagate a toggle for the given card key. */
+  onToggle: (key: string, willBe: boolean) => void;
+};
+type ZoomOpts = { allowEdit?: boolean; proxy?: ProxyController };
 
-type ZoomState = { list: ZoomCard[]; index: number; allowEdit: boolean };
+type ZoomState = {
+  list: ZoomCard[];
+  index: number;
+  allowEdit: boolean;
+  proxy: ProxyController | null;
+  proxySet: Set<string>;
+};
 
 type ZoomApi = {
   /** Zoom a single card (no prev/next). */
@@ -26,12 +39,28 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
   const [zoom, setZoom] = useState<ZoomState | null>(null);
   const open = useCallback(
     (card: ZoomCard, opts?: ZoomOpts) =>
-      setZoom({ list: [card], index: 0, allowEdit: opts?.allowEdit ?? true }),
+      setZoom({
+        list: [card],
+        index: 0,
+        allowEdit: opts?.allowEdit ?? true,
+        proxy: opts?.proxy ?? null,
+        proxySet: new Set(opts?.proxy?.initial ?? []),
+      }),
     [],
   );
   const openList = useCallback(
     (list: ZoomCard[], index: number, opts?: ZoomOpts) =>
-      setZoom(list.length ? { list, index, allowEdit: opts?.allowEdit ?? true } : null),
+      setZoom(
+        list.length
+          ? {
+              list,
+              index,
+              allowEdit: opts?.allowEdit ?? true,
+              proxy: opts?.proxy ?? null,
+              proxySet: new Set(opts?.proxy?.initial ?? []),
+            }
+          : null,
+      ),
     [],
   );
   const close = useCallback(() => setZoom(null), []);
@@ -96,6 +125,27 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                   <QuickAddButton name={card.name} label="+ Add to my collection" className="px-4 py-1.5 text-sm" />
                   <RemoveCardButton name={card.name} />
                 </>
+              )}
+              {zoom.proxy && card.key && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const key = card.key!;
+                    const willBe = !zoom.proxySet.has(key);
+                    const next = new Set(zoom.proxySet);
+                    if (willBe) next.add(key);
+                    else next.delete(key);
+                    setZoom({ ...zoom, proxySet: next });
+                    zoom.proxy!.onToggle(key, willBe);
+                  }}
+                  className={`rounded-lg border px-4 py-1.5 text-sm transition ${
+                    zoom.proxySet.has(card.key)
+                      ? "border-[var(--purple)] bg-[var(--purple)]/15 text-[var(--purple-deep)]"
+                      : "border-border bg-surface hover:bg-surface-2"
+                  }`}
+                >
+                  {zoom.proxySet.has(card.key) ? "🔁 Proxy ✓" : "🔁 Mark as proxy"}
+                </button>
               )}
               <a
                 href={`https://scryfall.com/search?q=${encodeURIComponent(`!"${card.name}"`)}`}
