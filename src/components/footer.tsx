@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
 import { getPodStats } from "@/lib/pod-stats";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 const BADGES = [
   { label: "BEST VIEWED IN NETSCAPE", bg: "linear-gradient(180deg,#3f6f8f,#274d6a)", color: "#dff0ff" },
@@ -19,12 +21,16 @@ export async function Footer() {
   const user = await getCurrentUser();
   if (!user) return null;
   const stats = await getPodStats();
+  const theme = (await cookies()).get("pod_theme")?.value ?? "candy";
   // A real number, styled like the old odometer (padded to 6 digits).
   const cards = String(stats.cards).padStart(6, "0").split("");
 
   return (
     <footer className="mx-auto mt-8 w-full max-w-6xl px-3 pb-10">
       <div className="flex flex-col items-center gap-3 border-t-2 border-dashed border-[var(--border)] pt-5">
+        {/* Theme skins */}
+        <ThemeSwitcher initial={theme} />
+
         {/* Web badges */}
         <div className="flex flex-wrap items-center justify-center gap-2">
           {BADGES.map((b) => (

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Nunito, Fredoka, IBM_Plex_Mono, VT323 } from "next/font/google";
 import { SiteChrome } from "@/components/site-chrome";
 import { Footer } from "@/components/footer";
@@ -37,12 +38,14 @@ export const metadata: Metadata = {
   description: "Ye olde shared commander collection — what does the pod already own?",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const theme = (await cookies()).get("pod_theme")?.value ?? "candy";
   return (
     <html
       lang="en"
+      data-theme={theme}
       className={`${nunito.variable} ${fredoka.variable} ${plexMono.variable} ${vt323.variable} h-full antialiased`}
     >
       <head>

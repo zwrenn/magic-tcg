@@ -73,6 +73,70 @@ html {
   color-scheme: light;
 }
 
+/* ============================================================
+   Site theme skins (Neopets-style). Default = Candy (:root above).
+   Each skin overrides the palette tokens + body wash + banner/head.
+   All kept light-surfaced so text stays legible everywhere.
+   ============================================================ */
+[data-theme="faerie"] {
+  --background: #f3e9ff; --surface: #fffafd; --surface-2: #f1e4ff;
+  --foreground: #3a2b5c; --muted: #8f7bb5; --subtle: #b9a8d6;
+  --border: #e6d6f7; --border-strong: #c9a8f0;
+  --accent: #b06cff; --accent-bright: #c98cff;
+  --purple: #a85cff; --purple-deep: #7a3fe0;
+  --pink: #ff79c6; --pink-deep: #e84fae;
+  --gold: #ffd23f; --warn: #ffb020;
+}
+[data-theme="faerie"] body {
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.6) 1.4px, transparent 1.6px) 0 0 / 22px 22px,
+    radial-gradient(circle, rgba(168,92,255,0.18) 1px, transparent 1.3px) 11px 11px / 22px 22px,
+    radial-gradient(circle, rgba(255,121,198,0.16) 1px, transparent 1.3px) 7px 15px / 30px 30px,
+    linear-gradient(180deg, #efe0ff 0%, #fbe9ff 55%, #fff0fb 100%);
+  background-attachment: fixed;
+}
+[data-theme="faerie"] .wood { background: linear-gradient(135deg, #b06cff 0%, #ff79c6 50%, #7a3fe0 100%); }
+[data-theme="faerie"] .module-head { background: linear-gradient(180deg, #b06cff, #7a3fe0); }
+
+[data-theme="spooky"] {
+  --background: #1c1330; --surface: #fff7ef; --surface-2: #f4e8da;
+  --foreground: #3a2b1c; --muted: #9a7b63; --subtle: #c2a98f;
+  --border: #ecd8c0; --border-strong: #d8a86a;
+  --accent: #ff7a1a; --accent-bright: #ff9442;
+  --purple: #9b6cff; --purple-deep: #7a4fe0;
+  --pink: #ff7a1a; --pink-deep: #d65f10;
+  --good: #6cc04a; --warn: #ffb020;
+}
+[data-theme="spooky"] body {
+  background:
+    radial-gradient(circle, rgba(255,154,61,0.20) 1px, transparent 1.3px) 11px 11px / 26px 26px,
+    radial-gradient(circle, rgba(155,108,255,0.16) 1px, transparent 1.3px) 7px 15px / 30px 30px,
+    linear-gradient(180deg, #241a3d 0%, #3a2350 55%, #4a2a1e 100%);
+  background-attachment: fixed;
+}
+[data-theme="spooky"] .wood { background: linear-gradient(135deg, #ff7a1a 0%, #9b6cff 50%, #1c1330 100%); }
+[data-theme="spooky"] .module-head { background: linear-gradient(180deg, #ff7a1a, #c75a10); }
+
+[data-theme="winter"] {
+  --background: #e6f4ff; --surface: #ffffff; --surface-2: #e7f1fb;
+  --foreground: #27405c; --muted: #7b93ab; --subtle: #a7bdd2;
+  --border: #cfe4f5; --border-strong: #a7cef0;
+  --accent: #36a7e0; --accent-bright: #5fc0f0;
+  --purple: #6c8cff; --purple-deep: #4f6fe0;
+  --pink: #7fd3ff; --pink-deep: #46b6e8;
+  --good: #3ac0b0; --gold: #bfe3ff;
+}
+[data-theme="winter"] body {
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.7) 1.4px, transparent 1.6px) 0 0 / 22px 22px,
+    radial-gradient(circle, rgba(54,167,224,0.16) 1px, transparent 1.3px) 11px 11px / 22px 22px,
+    radial-gradient(circle, rgba(160,210,255,0.20) 1px, transparent 1.3px) 7px 15px / 30px 30px,
+    linear-gradient(180deg, #dff0ff 0%, #eaf6ff 55%, #f4fbff 100%);
+  background-attachment: fixed;
+}
+[data-theme="winter"] .wood { background: linear-gradient(135deg, #5fc0f0 0%, #6c8cff 50%, #a7cef0 100%); }
+[data-theme="winter"] .module-head { background: linear-gradient(180deg, #36a7e0, #1f7fc0); }
+
 body {
   /* cheerful sky→mint→cream wash with a tiled multi-color sparkle wallpaper */
   background:
