@@ -11,13 +11,8 @@ import { getFavorites } from "@/lib/favorites";
 import { getDeckUsage } from "@/lib/decks";
 import { getPendingOutgoingKeys } from "@/lib/requests";
 import { POD_MEMBERS } from "@/lib/pod";
-import { CardZoomButton } from "@/components/card-zoom";
-import { FavoriteStar } from "@/components/favorite-star";
-import { QuickAddButton } from "@/components/quick-add-button";
 import { SearchHotkey } from "@/components/search-hotkey";
-import { ColorDots } from "@/components/mana";
-import { SetSymbol } from "@/components/set-symbol";
-import { SearchOwnerChips } from "./owner-chips";
+import { SearchResults, type SearchResultItem } from "./search-results";
 
 function ownerDecksMap(
   decks: { owner: string; id: number; name: string }[],
@@ -73,6 +68,29 @@ export default async function SearchPage({
     results = await globalSearch(q);
     ran = true;
   }
+
+  // Shape results for the client list (which owns the ←/→ zoom navigation).
+  const items: SearchResultItem[] = results.map((r) => {
+    const adv = "typeLine" in r ? (r as AdvancedResult) : null;
+    return {
+      normalizedName: r.normalizedName,
+      name: r.name,
+      image: r.image,
+      owners: r.owners,
+      typeLine: adv?.typeLine ?? null,
+      cmc: adv?.cmc ?? null,
+      colorIdentity: adv?.colorIdentity ?? null,
+      rarity: adv?.rarity ?? null,
+      setCode: adv?.setCode ?? null,
+      priceUsd: adv?.priceUsd ?? null,
+      decksByOwner: ownerDecksMap(deckUsage[r.normalizedName] ?? []),
+      alreadyAsked: r.owners
+        .filter((o) => pendingSet.has(`${r.normalizedName}::${o.name}`))
+        .map((o) => o.name),
+      favorite: favorites.has(r.normalizedName),
+      advanced: Boolean(adv),
+    };
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -196,57 +214,9 @@ export default async function SearchPage({
           <p className="mt-6 text-xs text-muted">
             {results.length} card{results.length === 1 ? "" : "s"}
             {isAdvanced && results.length >= 80 ? " (showing first 80)" : ""}
+            {" · "}click a card, then use ← → to browse
           </p>
-          <ul className="mt-2 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-            {results.map((r) => {
-              const decks = deckUsage[r.normalizedName] ?? [];
-              const adv = "typeLine" in r ? (r as AdvancedResult) : null;
-              return (
-                <li key={r.normalizedName} className="flex items-start gap-3 px-3 py-2">
-                  <CardZoomButton name={r.name} image={r.image} holo={r.owners.some((o) => o.foil)} className="shrink-0">
-                    {r.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.image} alt={r.name} loading="lazy" className="h-12 w-9 rounded-[3px] border border-border object-cover" />
-                    ) : (
-                      <span className="grid h-12 w-9 place-items-center rounded-[3px] border border-border bg-surface-2 text-[8px] text-muted">no img</span>
-                    )}
-                  </CardZoomButton>
-                  <FavoriteStar name={r.name} initial={favorites.has(r.normalizedName)} className="mt-1 text-lg" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardZoomButton
-                        name={r.name}
-                        image={r.image}
-                        holo={r.owners.some((o) => o.foil)}
-                        className="min-w-0 flex-1 truncate text-left font-medium hover:text-accent"
-                      >
-                        {r.name}
-                      </CardZoomButton>
-                      <SearchOwnerChips
-                        cardName={r.name}
-                        owners={r.owners}
-                        viewerName={viewer.name}
-                        decksByOwner={ownerDecksMap(decks)}
-                        alreadyAsked={r.owners
-                          .filter((o) => pendingSet.has(`${r.normalizedName}::${o.name}`))
-                          .map((o) => o.name)}
-                      />
-                    </div>
-                    {adv && (
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                        <ColorDots identity={adv.colorIdentity} />
-                        <SetSymbol setCode={adv.setCode} rarity={adv.rarity} className="text-sm" />
-                        {adv.typeLine ?? ""}
-                        {adv.cmc != null ? ` · MV ${adv.cmc}` : ""}
-                        {adv.priceUsd ? ` · $${adv.priceUsd}` : ""}
-                      </div>
-                    )}
-                  </div>
-                  <QuickAddButton name={r.name} />
-                </li>
-              );
-            })}
-          </ul>
+          <SearchResults items={items} viewerName={viewer.name} />
         </>
       )}
     </main>
