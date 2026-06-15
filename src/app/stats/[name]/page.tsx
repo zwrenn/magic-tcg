@@ -94,45 +94,6 @@ export default async function PlayerStatsPage({
         <Stat label="Est. value" value={`$${totals.valueUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} accent />
       </div>
 
-      {/* Trophy cabinet */}
-      <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-hero text-xl">🏆 Trophy Cabinet</h2>
-          <span className="lcd lcd-gold text-sm tabular-nums">
-            {earnedCount} / {trophies.length}
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {trophies.map((t) => (
-            <div
-              key={t.id}
-              title={t.earned ? `Earned: ${t.desc}` : t.desc}
-              className={`card flex items-center gap-3 p-3 ${t.earned ? "trophy-earned" : "trophy-locked"}`}
-            >
-              <span className="shrink-0">
-                <PixelTrophy shape={t.shape} tier={t.tier} gem={t.gem} />
-              </span>
-              <div className="min-w-0">
-                <div className="truncate font-semibold text-[#3a3358]">{t.name}</div>
-                {t.earned ? (
-                  <div className="text-xs font-semibold text-[var(--green-deep)]">Earned!</div>
-                ) : (
-                  <>
-                    <div className="truncate text-[11px] text-[#3a3358]/70">{t.desc}</div>
-                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
-                      <div
-                        className="h-full rounded-full bg-[var(--purple)]"
-                        style={{ width: `${Math.round(t.progress * 100)}%` }}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <div className="mt-8 grid gap-8 md:grid-cols-2">
         <section>
           <h2 className="t-label mb-3">By color</h2>
@@ -174,6 +135,45 @@ export default async function PlayerStatsPage({
             ))}
           </ul>
         )}
+      </section>
+
+      {/* Trophy cabinet */}
+      <section className="mt-10">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="t-hero text-xl">🏆 Trophy Cabinet</h2>
+          <span className="lcd lcd-gold text-sm tabular-nums">
+            {earnedCount} / {trophies.length}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {trophies.map((t) => (
+            <div
+              key={t.id}
+              title={t.earned ? `Earned: ${t.desc}` : t.desc}
+              className={`card flex items-center gap-3 p-3 ${t.earned ? "trophy-earned" : "trophy-locked"}`}
+            >
+              <span className="shrink-0">
+                <PixelTrophy shape={t.shape} tier={t.tier} gem={t.gem} />
+              </span>
+              <div className="min-w-0">
+                <div className="truncate font-semibold text-[#3a3358]">{t.name}</div>
+                {t.earned ? (
+                  <div className="text-xs font-semibold text-[var(--green-deep)]">Earned!</div>
+                ) : (
+                  <>
+                    <div className="truncate text-[11px] text-[#3a3358]/70">{t.desc}</div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+                      <div
+                        className="h-full rounded-full bg-[var(--purple)]"
+                        style={{ width: `${Math.round(t.progress * 100)}%` }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   );
