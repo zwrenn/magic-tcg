@@ -4,7 +4,10 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { QuickAddButton } from "./quick-add-button";
 import { RemoveCardButton } from "./remove-card-button";
 import { RemoveFromDeckButton } from "./remove-from-deck-button";
+import { FavoriteStar } from "./favorite-star";
+import { ZoomAskButtons } from "./zoom-ask-buttons";
 
+type ZoomOwner = { name: string; qty: number; foil: boolean };
 type ZoomCard = {
   name: string;
   image: string | null;
@@ -13,6 +16,15 @@ type ZoomCard = {
   viewerOwns?: boolean;
   /** Render a holographic foil shimmer over the card. */
   holo?: boolean;
+  /** If defined, show a favorite star seeded with this state. */
+  favorite?: boolean;
+  /** If provided (with viewerName), show borrow-ask buttons per owner. */
+  owners?: ZoomOwner[];
+  viewerName?: string;
+  /** Owner names already asked (pending request) for this card. */
+  askedOwners?: string[];
+  /** Deck context for a borrow request, if any. */
+  deckId?: number;
 };
 /** Lets a list owner expose a per-card "mark as proxy" toggle inside the zoom. */
 type ProxyController = {
@@ -139,7 +151,26 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                 <div className="mt-1 text-xs text-muted">No image available</div>
               </div>
             )}
+            {/* Borrow-ask buttons (who in the pod has it) */}
+            {card.owners && card.viewerName && (
+              <ZoomAskButtons
+                key={card.key ?? card.name}
+                owners={card.owners}
+                viewerName={card.viewerName}
+                cardName={card.name}
+                deckId={card.deckId}
+                initialAsked={card.askedOwners}
+              />
+            )}
             <div className="flex flex-wrap items-center justify-center gap-2">
+              {card.favorite !== undefined && (
+                <FavoriteStar
+                  key={card.key ?? card.name}
+                  name={card.name}
+                  initial={card.favorite}
+                  className="rounded-lg border border-border bg-surface px-3 py-1 text-xl"
+                />
+              )}
               {zoom.allowEdit && (
                 <>
                   <QuickAddButton name={card.name} label="+ Add to my collection" className="px-4 py-1.5 text-sm" />

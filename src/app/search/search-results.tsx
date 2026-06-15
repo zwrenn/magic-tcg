@@ -47,8 +47,12 @@ export function SearchResults({
         image: r.image,
         key: r.normalizedName,
         holo: r.owners.some((o) => o.foil),
+        favorite: r.favorite,
+        owners: r.owners,
+        viewerName,
+        askedOwners: r.alreadyAsked,
       })),
-    [items],
+    [items, viewerName],
   );
   const openAt = (i: number) => openList(zoomList, i);
 

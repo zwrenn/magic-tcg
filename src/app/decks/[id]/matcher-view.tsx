@@ -18,6 +18,7 @@ export function MatcherView({
   deckId,
   canEdit,
   initialAsked = [],
+  initialFavorites = [],
 }: {
   cards: DeckCardMatch[];
   deckOwnerName: string;
@@ -27,6 +28,8 @@ export function MatcherView({
   canEdit: boolean;
   /** `${normalizedName}::${owner}` keys with a pending request already sent. */
   initialAsked?: string[];
+  /** normalizedNames the viewer has favorited. */
+  initialFavorites?: string[];
 }) {
   // Default: exclude the viewer's own cards, so you see what the rest of the
   // pod can contribute to you.
@@ -38,6 +41,7 @@ export function MatcherView({
   const [filterOwner, setFilterOwner] = useState<string>("all");
   const [copied, setCopied] = useState(false);
   const [asked, setAsked] = useState<Set<string>>(() => new Set(initialAsked));
+  const favorites = useMemo(() => new Set(initialFavorites), [initialFavorites]);
   const [proxies, setProxies] = useState<Set<string>>(
     () => new Set(cards.filter((c) => c.isProxy).map((c) => c.normalizedName)),
   );
@@ -211,8 +215,15 @@ export function MatcherView({
         key: r.card.normalizedName,
         viewerOwns: r.card.owners.some((o) => o.name === viewerName),
         holo: r.card.owners.some((o) => o.foil),
+        favorite: favorites.has(r.card.normalizedName),
+        owners: r.card.owners,
+        viewerName,
+        deckId,
+        askedOwners: r.card.owners
+          .filter((o) => asked.has(`${r.card.normalizedName}::${o.name}`))
+          .map((o) => o.name),
       })),
-    [ordered, viewerName],
+    [ordered, viewerName, favorites, asked, deckId],
   );
   const zoomIndex = useMemo(() => {
     const m = new Map<string, number>();

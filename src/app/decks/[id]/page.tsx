@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { matchDeck } from "@/lib/matcher";
 import { getPendingOutgoingKeys } from "@/lib/requests";
+import { getFavorites } from "@/lib/favorites";
 import { POD_MEMBERS } from "@/lib/pod";
 import { MatcherView } from "./matcher-view";
 import { DeleteDeckButton } from "./delete-deck-button";
@@ -20,7 +21,10 @@ export default async function DeckPage({
   const result = await matchDeck(deckId);
   if (!result) notFound();
   const { deck, cards } = result;
-  const initialAsked = await getPendingOutgoingKeys(viewer.id);
+  const [initialAsked, favorites] = await Promise.all([
+    getPendingOutgoingKeys(viewer.id),
+    getFavorites(viewer.id),
+  ]);
   // Full deck size (every copy, incl. basics) vs distinct — matches Archidekt.
   const totalCopies = deck.cards.reduce((s, c) => s + c.quantity, 0);
   const distinct = deck.cards.length;
@@ -51,6 +55,7 @@ export default async function DeckPage({
         deckId={deck.id}
         canEdit={deck.ownerUserId === viewer.id}
         initialAsked={initialAsked}
+        initialFavorites={[...favorites]}
       />
     </main>
   );
