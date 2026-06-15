@@ -99,19 +99,21 @@ html {
 [data-theme="faerie"] .module-head { background: linear-gradient(180deg, #b06cff, #7a3fe0); }
 
 [data-theme="spooky"] {
-  --background: #1c1330; --surface: #fff7ef; --surface-2: #f4e8da;
-  --foreground: #3a2b1c; --muted: #9a7b63; --subtle: #c2a98f;
-  --border: #ecd8c0; --border-strong: #d8a86a;
-  --accent: #ff7a1a; --accent-bright: #ff9442;
-  --purple: #9b6cff; --purple-deep: #7a4fe0;
-  --pink: #ff7a1a; --pink-deep: #d65f10;
-  --good: #6cc04a; --warn: #ffb020;
+  --background: #b9a6cf; --surface: #fff7ef; --surface-2: #f4e8da;
+  --foreground: #2a2018; --muted: #6b5040; --subtle: #8a7060;
+  --border: #e6d2b8; --border-strong: #cf9a5a;
+  --accent: #e8631a; --accent-bright: #ff7a1a;
+  --purple: #8a5cf0; --purple-deep: #6a3fd0;
+  --pink: #e8631a; --pink-deep: #c75210;
+  --good: #4e9e2c; --warn: #d98a12;
 }
 [data-theme="spooky"] body {
+  /* haunted twilight — dusky but light enough for the dark text everywhere */
   background:
-    radial-gradient(circle, rgba(255,154,61,0.20) 1px, transparent 1.3px) 11px 11px / 26px 26px,
-    radial-gradient(circle, rgba(155,108,255,0.16) 1px, transparent 1.3px) 7px 15px / 30px 30px,
-    linear-gradient(180deg, #241a3d 0%, #3a2350 55%, #4a2a1e 100%);
+    radial-gradient(circle, rgba(255,255,255,0.40) 1.4px, transparent 1.6px) 0 0 / 22px 22px,
+    radial-gradient(circle, rgba(106,63,208,0.20) 1px, transparent 1.3px) 11px 11px / 26px 26px,
+    radial-gradient(circle, rgba(232,99,26,0.20) 1px, transparent 1.3px) 7px 15px / 30px 30px,
+    linear-gradient(180deg, #b9a6cf 0%, #cbb4c4 52%, #eccfa2 100%);
   background-attachment: fixed;
 }
 [data-theme="spooky"] .wood { background: linear-gradient(135deg, #ff7a1a 0%, #9b6cff 50%, #1c1330 100%); }
