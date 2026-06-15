@@ -10,6 +10,7 @@ import {
 } from "@/lib/card-types";
 import { CardZoomButton } from "@/components/card-zoom";
 import { getTrophies } from "@/lib/trophies";
+import { PixelTrophy } from "@/components/pixel-trophy";
 
 const COLOR_HEX: Record<string, string> = {
   White: "#f5f0d8",
@@ -108,7 +109,9 @@ export default async function PlayerStatsPage({
               title={t.earned ? `Earned: ${t.desc}` : t.desc}
               className={`card flex items-center gap-3 p-3 ${t.earned ? "trophy-earned" : "trophy-locked"}`}
             >
-              <span className={`text-3xl ${t.earned ? "sparkle" : ""}`}>{t.icon}</span>
+              <span className="shrink-0">
+                <PixelTrophy shape={t.shape} tier={t.tier} gem={t.gem} />
+              </span>
               <div className="min-w-0">
                 <div className="truncate font-semibold text-[#3a3358]">{t.name}</div>
                 {t.earned ? (

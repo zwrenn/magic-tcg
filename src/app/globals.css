@@ -374,14 +374,11 @@ h1, h2, h3 {
   100% { transform: translate(var(--dx, 0), var(--dy, 60vh)) rotate(var(--cr, 540deg)) scale(0.9); opacity: 0; }
 }
 
-/* ---------- Trophy cabinet ---------- */
-@keyframes trophy-shine { to { background-position: 200% center; } }
+/* ---------- Trophy cabinet (static, no pulse) ---------- */
 .trophy-earned {
-  background: linear-gradient(135deg, #fff7d6, #ffe9a8 42%, #ffd23f 52%, #fff7d6);
-  background-size: 200% auto;
-  animation: trophy-shine 4s linear infinite;
+  background: linear-gradient(135deg, #fff7d6, #ffe9a8 45%, #ffd23f 62%, #fff3c4);
   border-color: var(--yellow-deep) !important;
-  box-shadow: 0 4px 0 rgba(224, 169, 26, 0.45), 0 0 14px rgba(255, 206, 58, 0.55);
+  box-shadow: 0 4px 0 rgba(224, 169, 26, 0.45), 0 0 12px rgba(255, 206, 58, 0.4);
 }
 .trophy-locked { filter: grayscale(1); opacity: 0.5; }
 
