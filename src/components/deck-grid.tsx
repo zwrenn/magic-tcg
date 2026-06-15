@@ -56,7 +56,7 @@ export function DeckGrid({ decks }: { decks: BuildableDeck[] }) {
               className={`rounded-full border-[3px] px-3 py-1 text-xs font-bold uppercase tracking-wide transition ${
                 sort === s
                   ? "border-white bg-[linear-gradient(180deg,#b48bff,#9b6cff)] text-white shadow-[0_3px_0_rgba(122,79,224,0.5)]"
-                  : "border-[var(--border)] bg-white text-muted hover:border-[var(--purple)] hover:-translate-y-0.5"
+                  : "border-[var(--border)] bg-surface text-muted hover:border-[var(--purple)] hover:-translate-y-0.5"
               }`}
             >
               {s === "az" ? "A–Z" : s}
@@ -74,7 +74,7 @@ export function DeckGrid({ decks }: { decks: BuildableDeck[] }) {
         <li>
           <Link
             href="/decks/new"
-            className="hover-pop flex h-full min-h-[260px] flex-col items-center justify-center gap-2 rounded-[18px] border-[3px] border-dashed border-[var(--purple)] bg-white/60 text-center transition hover:bg-[#f6f0ff]"
+            className="hover-pop flex h-full min-h-[260px] flex-col items-center justify-center gap-2 rounded-[18px] border-[3px] border-dashed border-[var(--purple)] bg-[var(--surface)]/60 text-center transition hover:bg-[var(--surface-2)]"
           >
             <span className="float text-4xl text-[var(--purple)]">✨</span>
             <span className="t-hero text-xl text-[var(--purple-deep)]">Build a New Deck</span>
@@ -122,7 +122,7 @@ function DeckCard({ deck: d }: { deck: BuildableDeck }) {
               className="aspect-[16/10] w-full rounded-lg border-2 border-[var(--border)] object-cover object-top"
             />
           ) : (
-            <div className="flex aspect-[16/10] w-full items-center justify-center rounded-xl border-[3px] border-dashed border-[var(--border-strong)] bg-[#f3eeff] text-sm text-muted">
+            <div className="flex aspect-[16/10] w-full items-center justify-center rounded-xl border-[3px] border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] text-sm text-muted">
               ✨ no commander art ✨
             </div>
           )}

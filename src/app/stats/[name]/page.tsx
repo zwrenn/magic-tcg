@@ -156,12 +156,12 @@ export default async function PlayerStatsPage({
                 <PixelTrophy shape={t.shape} tier={t.tier} gem={t.gem} />
               </span>
               <div className="min-w-0">
-                <div className="truncate font-semibold text-[#3a3358]">{t.name}</div>
+                <div className={`truncate font-semibold ${t.earned ? "text-[#3a3358]" : "text-foreground"}`}>{t.name}</div>
                 {t.earned ? (
                   <div className="text-xs font-semibold text-[var(--green-deep)]">Earned!</div>
                 ) : (
                   <>
-                    <div className="truncate text-[11px] text-[#3a3358]/70">{t.desc}</div>
+                    <div className="truncate text-[11px] text-muted">{t.desc}</div>
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
                       <div
                         className="h-full rounded-full bg-[var(--purple)]"

@@ -98,26 +98,28 @@ html {
 [data-theme="faerie"] .wood { background: linear-gradient(135deg, #b06cff 0%, #ff79c6 50%, #7a3fe0 100%); }
 [data-theme="faerie"] .module-head { background: linear-gradient(180deg, #b06cff, #7a3fe0); }
 
+/* Spooky is a true DARK theme: dark surfaces + light text. */
 [data-theme="spooky"] {
-  --background: #b9a6cf; --surface: #fff7ef; --surface-2: #f4e8da;
-  --foreground: #2a2018; --muted: #6b5040; --subtle: #8a7060;
-  --border: #e6d2b8; --border-strong: #cf9a5a;
-  --accent: #e8631a; --accent-bright: #ff7a1a;
-  --purple: #8a5cf0; --purple-deep: #6a3fd0;
-  --pink: #e8631a; --pink-deep: #c75210;
-  --good: #4e9e2c; --warn: #d98a12;
+  --background: #160f26; --surface: #241a3d; --surface-2: #322651;
+  --foreground: #f3ecff; --muted: #b6a4d6; --subtle: #8a79ad;
+  --border: #3e3160; --border-strong: #5a4790;
+  --accent: #ff7a1a; --accent-bright: #ff9442;
+  --purple: #b48bff; --purple-deep: #cbb2ff;
+  --pink: #ff8a3a; --pink-deep: #ff7a1a;
+  --good: #66d94a; --warn: #ffb020; --bad: #ff6b6b; --gold: #ffce3a;
 }
 [data-theme="spooky"] body {
-  /* haunted twilight — dusky but light enough for the dark text everywhere */
   background:
-    radial-gradient(circle, rgba(255,255,255,0.40) 1.4px, transparent 1.6px) 0 0 / 22px 22px,
-    radial-gradient(circle, rgba(106,63,208,0.20) 1px, transparent 1.3px) 11px 11px / 26px 26px,
-    radial-gradient(circle, rgba(232,99,26,0.20) 1px, transparent 1.3px) 7px 15px / 30px 30px,
-    linear-gradient(180deg, #b9a6cf 0%, #cbb4c4 52%, #eccfa2 100%);
+    radial-gradient(circle, rgba(255,154,61,0.16) 1px, transparent 1.4px) 11px 11px / 26px 26px,
+    radial-gradient(circle, rgba(180,139,255,0.16) 1px, transparent 1.4px) 7px 15px / 30px 30px,
+    linear-gradient(180deg, #1a1230 0%, #2a1c44 55%, #3a2030 100%);
   background-attachment: fixed;
 }
-[data-theme="spooky"] .wood { background: linear-gradient(135deg, #ff7a1a 0%, #9b6cff 50%, #1c1330 100%); }
+[data-theme="spooky"] .wood { background: linear-gradient(135deg, #ff7a1a 0%, #9b6cff 50%, #3a1d5e 100%); }
 [data-theme="spooky"] .module-head { background: linear-gradient(180deg, #ff7a1a, #c75a10); }
+/* keep the few hardcoded-light surfaces dark in this theme */
+[data-theme="spooky"] .bg-white,
+[data-theme="spooky"] .bg-white\/60 { background-color: var(--surface) !important; }
 
 [data-theme="winter"] {
   --background: #e6f4ff; --surface: #ffffff; --surface-2: #e7f1fb;
@@ -465,7 +467,7 @@ h1, h2, h3 {
 .input {
   width: 100%;
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
   border: 3px solid var(--border);
   padding: 0.5rem 0.8rem;
   color: var(--foreground);

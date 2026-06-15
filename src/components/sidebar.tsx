@@ -37,8 +37,8 @@ export async function Sidebar({
                   title={`See ${r.name}'s stats`}
                   className={`hover-pop flex items-center gap-2 rounded-xl border-[3px] px-2 py-1.5 transition ${
                     isYou
-                      ? "border-[var(--accent)] bg-[#eafbe4]"
-                      : "border-[var(--border)] bg-white hover:border-[var(--purple)]"
+                      ? "border-[var(--accent)] bg-[var(--surface-2)]"
+                      : "border-[var(--border)] bg-surface hover:border-[var(--purple)]"
                   }`}
                 >
                   <span className="grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-gradient-to-b from-[#8fe87a] to-[#3f9a2c] text-xs font-bold text-[#10300f] shadow-[0_2px_0_rgba(63,154,44,0.5)]">
