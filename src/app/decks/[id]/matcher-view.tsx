@@ -17,6 +17,7 @@ export function MatcherView({
   members,
   deckId,
   canEdit,
+  initialAsked = [],
 }: {
   cards: DeckCardMatch[];
   deckOwnerName: string;
@@ -24,6 +25,8 @@ export function MatcherView({
   members: string[];
   deckId: number;
   canEdit: boolean;
+  /** `${normalizedName}::${owner}` keys with a pending request already sent. */
+  initialAsked?: string[];
 }) {
   // Default: exclude the viewer's own cards, so you see what the rest of the
   // pod can contribute to you.
@@ -34,7 +37,7 @@ export function MatcherView({
   const [filterRarity, setFilterRarity] = useState<string>("all");
   const [filterOwner, setFilterOwner] = useState<string>("all");
   const [copied, setCopied] = useState(false);
-  const [asked, setAsked] = useState<Set<string>>(new Set());
+  const [asked, setAsked] = useState<Set<string>>(() => new Set(initialAsked));
   const [proxies, setProxies] = useState<Set<string>>(
     () => new Set(cards.filter((c) => c.isProxy).map((c) => c.normalizedName)),
   );
@@ -101,8 +104,8 @@ export function MatcherView({
     });
   }
 
-  async function requestCard(owner: string, cardName: string) {
-    const key = `${cardName}::${owner}`;
+  async function requestCard(owner: string, normalizedName: string, cardName: string) {
+    const key = `${normalizedName}::${owner}`;
     setAsked((s) => new Set(s).add(key));
     try {
       await fetch("/api/requests", {
@@ -512,7 +515,7 @@ export function MatcherView({
                     ) : (
                       r.eff.map((o) => {
                         const mine = o.name === viewerName;
-                        const askedKey = `${r.card.name}::${o.name}`;
+                        const askedKey = `${r.card.normalizedName}::${o.name}`;
                         const didAsk = asked.has(askedKey);
                         return mine ? (
                           <span
@@ -526,7 +529,7 @@ export function MatcherView({
                         ) : (
                           <button
                             key={o.name}
-                            onClick={() => !didAsk && requestCard(o.name, r.card.name)}
+                            onClick={() => !didAsk && requestCard(o.name, r.card.normalizedName, r.card.name)}
                             disabled={didAsk}
                             title={didAsk ? "Request sent" : `Ask ${o.name} for this card`}
                             className={`rounded-full px-2 py-0.5 text-xs transition ${

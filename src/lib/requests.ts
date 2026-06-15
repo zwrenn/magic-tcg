@@ -127,6 +127,28 @@ export async function getOutgoing(userId: number): Promise<RequestRow[]> {
   return hydrate(rows);
 }
 
+/**
+ * Cards the viewer has a *pending* outgoing request for, as a set of
+ * `${normalizedName}::${recipientName}` keys. Used to pre-mark "✓ asked" so the
+ * UI doesn't let you ask the same person for the same card twice.
+ */
+export async function getPendingOutgoingKeys(userId: number): Promise<string[]> {
+  const rows = await db
+    .select({
+      normalizedName: schema.requests.normalizedName,
+      toName: schema.users.name,
+    })
+    .from(schema.requests)
+    .innerJoin(schema.users, eq(schema.users.id, schema.requests.toUserId))
+    .where(
+      and(
+        eq(schema.requests.fromUserId, userId),
+        eq(schema.requests.status, "pending"),
+      ),
+    );
+  return rows.map((r) => `${r.normalizedName}::${r.toName}`);
+}
+
 export async function countIncomingPending(userId: number): Promise<number> {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })

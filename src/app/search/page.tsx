@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { globalSearch } from "@/lib/search";
 import { getFavorites } from "@/lib/favorites";
 import { getDeckUsage } from "@/lib/decks";
+import { getPendingOutgoingKeys } from "@/lib/requests";
 import { CardZoomButton } from "@/components/card-zoom";
 import { FavoriteStar } from "@/components/favorite-star";
 import { QuickAddButton } from "@/components/quick-add-button";
@@ -24,10 +25,12 @@ export default async function SearchPage({
   const viewer = await requireUser();
   const { q = "" } = await searchParams;
   const results = q.trim() ? await globalSearch(q) : [];
-  const [favorites, deckUsage] = await Promise.all([
+  const [favorites, deckUsage, pendingAsks] = await Promise.all([
     getFavorites(viewer.id),
     getDeckUsage(),
+    getPendingOutgoingKeys(viewer.id),
   ]);
+  const pendingSet = new Set(pendingAsks);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -99,6 +102,9 @@ export default async function SearchPage({
                       owners={r.owners}
                       viewerName={viewer.name}
                       decksByOwner={ownerDecksMap(decks)}
+                      alreadyAsked={r.owners
+                        .filter((o) => pendingSet.has(`${r.normalizedName}::${o.name}`))
+                        .map((o) => o.name)}
                     />
                   </div>
                 </div>

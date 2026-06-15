@@ -16,13 +16,16 @@ export function SearchOwnerChips({
   owners,
   viewerName,
   decksByOwner,
+  alreadyAsked = [],
 }: {
   cardName: string;
   owners: Owner[];
   viewerName: string;
   decksByOwner: Record<string, DeckRef[]>;
+  /** Owner names the viewer already has a pending request to for this card. */
+  alreadyAsked?: string[];
 }) {
-  const [asked, setAsked] = useState<Set<string>>(new Set());
+  const [asked, setAsked] = useState<Set<string>>(() => new Set(alreadyAsked));
 
   async function ask(name: string) {
     setAsked((s) => new Set(s).add(name));
