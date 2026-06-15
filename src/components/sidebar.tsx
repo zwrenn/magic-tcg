@@ -4,10 +4,8 @@ import { PodPet } from "@/components/pod-pet";
 
 export async function Sidebar({
   currentUser,
-  randomHref,
 }: {
   currentUser: string;
-  randomHref: string;
 }) {
   const roster = await getRoster();
 
@@ -22,9 +20,6 @@ export async function Sidebar({
           </Link>
           <Link href="/import" className="gel gel-gold w-full">
             ⇧ Import List
-          </Link>
-          <Link href={randomHref} className="gel gel-purple w-full">
-            ⚄ Random Deck
           </Link>
         </div>
       </div>
