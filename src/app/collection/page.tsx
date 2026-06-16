@@ -5,11 +5,12 @@ import { CollectionViewLoader } from './components/CollectionViewLoader';
 import { AddCardPanel } from './components/AddCardPanel';
 import { ClearCollectionButton } from './components/ClearCollectionButton';
 import { SearchHotkey } from '@/components/search-hotkey';
+import { gridListRowClass } from './components/constants';
 
 function CollectionGridSkeleton() {
   return (
     <div className="mt-5">
-      <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+      <ul className={`grid gap-3 ${gridListRowClass}`}>
         {Array.from({ length: 24 }).map((_, i) => (
           <li
             key={i}

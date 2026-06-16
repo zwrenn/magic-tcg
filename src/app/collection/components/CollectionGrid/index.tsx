@@ -3,6 +3,7 @@
 import type { CollectionRow } from '@/lib/search';
 import type { DeckUsage } from '../useCollectionFilters';
 import { GridCard } from './GridCard';
+import { gridListRowClass } from '../constants';
 
 interface CollectionGridProps {
   items: CollectionRow[];
@@ -22,7 +23,7 @@ export function CollectionGrid({
   onZoom,
 }: CollectionGridProps) {
   return (
-    <ul className="grid grid-cols-2 gap-3 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+    <ul className={`grid gap-3 ${gridListRowClass}`}>
       {items.map((r, i) => (
         <GridCard
           key={`${r.name}-${r.foil}-${i}`}
