@@ -179,7 +179,7 @@ export function GlitterField({
     <canvas
       ref={ref}
       aria-hidden
-      className={`pointer-events-none absolute top-0 left-0 z-2 h-full w-full overflow-hidden ${className}`}
+      className={`pointer-events-none absolute top-0 left-0 z-[2] h-full w-full overflow-hidden ${className}`}
     />
   );
 }
