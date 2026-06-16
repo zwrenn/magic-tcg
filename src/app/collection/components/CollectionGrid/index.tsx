@@ -12,6 +12,8 @@ interface CollectionGridProps {
   onZoom: (index: number) => void;
 }
 
+const emptyDecks: DeckUsage[string] = [];
+
 export function CollectionGrid({
   items,
   favs,
@@ -27,7 +29,7 @@ export function CollectionGrid({
           item={r}
           index={i}
           isFav={favs.has(r.normalizedName)}
-          decks={deckUsage[r.normalizedName] ?? []}
+          decks={deckUsage[r.normalizedName] ?? emptyDecks}
           onFavChange={onFavChange}
           onZoom={onZoom}
         />
