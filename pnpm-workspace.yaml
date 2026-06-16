@@ -1,7 +1,3 @@
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
-
 # Prevent downloading new packages younger than 3 days
 # Prevents most supply chain attacks by not allowing a
 # pnpm i to install a new (potentially compromised) version of a package
@@ -11,3 +7,7 @@ ignoredBuiltDependencies:
 minimumReleaseAge: 4320 # 3 days in minutes
 minimumReleaseAgeStrict: true
 minimumReleaseAgeIgnoreMissingTime: false
+allowBuilds:
+  esbuild: true
+  lefthook: true
+  sharp: false
