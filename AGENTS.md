@@ -25,6 +25,8 @@ function Card({ name, image }: { name: string; image: string | null }) { ... }
 - **Plain TS modules** (hooks, utils, types, lib) use camelCase: `useMyHook.ts`, `cardTypes.ts`
 - **Next.js route segments and pages** use kebab-case as required by the framework: `my-page/page.tsx`
 
+If you are doing direct work in a file and it has an "incorrect" name per this convention, please rename it as part of your work. DON'T go around renaming random files you simply encounter; only if you are actually working in that file.
+
 ## Styling
 
 - Do **not** add anything to `globals.css`. Use Tailwind utility classes or a locally-scoped CSS module (`.module.css`) for any styles that can't be expressed inline.

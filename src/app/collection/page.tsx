@@ -1,11 +1,11 @@
-import { requireUser } from "@/lib/auth";
-import { collectionTotals, searchUserCollection } from "@/lib/search";
-import { getFavorites } from "@/lib/favorites";
-import { getDeckUsage } from "@/lib/decks";
-import { CollectionView } from "./collection-view";
-import { AddCardPanel } from "./add-card-panel";
-import { ClearCollectionButton } from "./clear-collection-button";
-import { SearchHotkey } from "@/components/search-hotkey";
+import { requireUser } from '@/lib/auth';
+import { collectionTotals, searchUserCollection } from '@/lib/search';
+import { getFavorites } from '@/lib/favorites';
+import { getDeckUsage } from '@/lib/decks';
+import { CollectionView } from './components/CollectionView';
+import { AddCardPanel } from './components/AddCardPanel';
+import { ClearCollectionButton } from './components/ClearCollectionButton';
+import { SearchHotkey } from '@/components/search-hotkey';
 
 // High cap so color/type/set filtering works across the whole collection
 // (client-side). Covers any realistic personal collection.
@@ -17,7 +17,7 @@ export default async function CollectionPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const user = await requireUser();
-  const { q = "" } = await searchParams;
+  const { q = '' } = await searchParams;
   const [totals, rows, favorites, deckUsage] = await Promise.all([
     collectionTotals(user.id),
     searchUserCollection(user.id, q, LIMIT),
@@ -34,20 +34,22 @@ export default async function CollectionPage({
             {user.name}&apos;s cards
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {totals.distinct.toLocaleString()} distinct ·{" "}
-            {totals.total.toLocaleString()} total ·{" "}
+            {totals.distinct.toLocaleString()} distinct ·{' '}
+            {totals.total.toLocaleString()} total ·{' '}
             <span className="text-foreground">
               ~$
               {totals.valueUsd.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
-            </span>{" "}
+            </span>{' '}
             est. value
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AddCardPanel />
-          {totals.distinct > 0 && <ClearCollectionButton count={totals.distinct} />}
+          {totals.distinct > 0 && (
+            <ClearCollectionButton count={totals.distinct} />
+          )}
         </div>
       </div>
 
@@ -65,7 +67,7 @@ export default async function CollectionPage({
 
       {totals.distinct === 0 ? (
         <p className="mt-8 text-sm text-muted">
-          No cards yet —{" "}
+          No cards yet —{' '}
           <a href="/import" className="text-accent hover:underline">
             import your ManaBox CSV
           </a>
