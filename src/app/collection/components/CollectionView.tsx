@@ -73,7 +73,6 @@ export function CollectionView({
     }
   }
 
-  const filters = useCollectionFilters(items, deckUsage, favs);
   const {
     visible,
     setOptions,
@@ -84,7 +83,15 @@ export function CollectionView({
     dir,
     favOnly,
     deckFilter,
-  } = filters;
+    setColor,
+    setType,
+    setSet,
+    setSort,
+    setDir,
+    setDeckFilter,
+    setFavOnly,
+    clearAll,
+  } = useCollectionFilters(items, deckUsage, favs);
 
   const close = useCallback(() => setZoom(null), []);
   const step = useCallback(
@@ -101,36 +108,34 @@ export function CollectionView({
     <>
       <CollectionFiltersBar
         color={color}
-        onColorChange={filters.setColor}
+        onColorChange={setColor}
         type={type}
-        onTypeChange={filters.setType}
+        onTypeChange={setType}
         set={set}
-        onSetChange={filters.setSet}
+        onSetChange={setSet}
         sort={sort}
-        onSortChange={filters.setSort}
+        onSortChange={setSort}
         dir={dir}
-        onDirToggle={() =>
-          filters.setDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-        }
+        onDirToggle={() => setDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
         deckFilter={deckFilter}
-        onDeckFilterChange={filters.setDeckFilter}
+        onDeckFilterChange={setDeckFilter}
         favOnly={favOnly}
-        onFavOnlyToggle={() => filters.setFavOnly((f) => !f)}
+        onFavOnlyToggle={() => setFavOnly((f) => !f)}
         view={view}
         onViewChange={pickView}
         setOptions={setOptions}
       />
       <CollectionChips
         favOnly={favOnly}
-        onClearFavOnly={() => filters.setFavOnly(false)}
+        onClearFavOnly={() => setFavOnly(false)}
         color={color}
-        onClearColor={() => filters.setColor('all')}
+        onClearColor={() => setColor('all')}
         type={type}
-        onClearType={() => filters.setType('all')}
+        onClearType={() => setType('all')}
         set={set}
-        onClearSet={() => filters.setSet('all')}
+        onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={filters.clearAll}
+        onClearAll={clearAll}
       />
       {/* START - Showing Count - START */}
       <p className="mb-3 text-xs text-muted">
