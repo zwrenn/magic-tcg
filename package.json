@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@tanstack/react-virtual": "^3.14.2",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.9",
     "papaparse": "^5.5.3",

@@ -2,7 +2,7 @@
 
 import type { CollectionRow } from '@/lib/search';
 import type { DeckUsage } from './useCollectionFilters';
-import { FavoriteStar } from '@/components/favorite-star';
+import { FavoriteStar } from '@/components/FavoriteStar';
 import { ManaCost, ColorDots } from '@/components/mana';
 import { SetSymbol } from '@/components/set-symbol';
 

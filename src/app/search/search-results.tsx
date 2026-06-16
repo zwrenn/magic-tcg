@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useCardZoom } from "@/components/card-zoom";
-import { FavoriteStar } from "@/components/favorite-star";
-import { QuickAddButton } from "@/components/quick-add-button";
-import { ColorDots } from "@/components/mana";
-import { SetSymbol } from "@/components/set-symbol";
-import { SearchOwnerChips } from "./owner-chips";
+import { useMemo } from 'react';
+import { useCardZoom } from '@/components/card-zoom';
+import { FavoriteStar } from '@/components/FavoriteStar';
+import { QuickAddButton } from '@/components/quick-add-button';
+import { ColorDots } from '@/components/mana';
+import { SetSymbol } from '@/components/set-symbol';
+import { SearchOwnerChips } from './owner-chips';
 
 type Owner = { name: string; qty: number; foil: boolean };
 type DeckRef = { id: number; name: string };
@@ -52,7 +52,7 @@ export function SearchResults({
         viewerName,
         askedOwners: r.alreadyAsked,
       })),
-    [items, viewerName],
+    [items, viewerName]
   );
   const openAt = (i: number) => openList(zoomList, i);
 
@@ -80,7 +80,11 @@ export function SearchResults({
               </span>
             )}
           </button>
-          <FavoriteStar name={r.name} initial={r.favorite} className="mt-1 text-lg" />
+          <FavoriteStar
+            name={r.name}
+            initial={r.favorite}
+            className="mt-1 text-lg"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <button
@@ -101,10 +105,14 @@ export function SearchResults({
             {r.advanced && (
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 <ColorDots identity={r.colorIdentity ?? null} />
-                <SetSymbol setCode={r.setCode ?? null} rarity={r.rarity ?? null} className="text-sm" />
-                {r.typeLine ?? ""}
-                {r.cmc != null ? ` · MV ${r.cmc}` : ""}
-                {r.priceUsd ? ` · $${r.priceUsd}` : ""}
+                <SetSymbol
+                  setCode={r.setCode ?? null}
+                  rarity={r.rarity ?? null}
+                  className="text-sm"
+                />
+                {r.typeLine ?? ''}
+                {r.cmc != null ? ` · MV ${r.cmc}` : ''}
+                {r.priceUsd ? ` · $${r.priceUsd}` : ''}
               </div>
             )}
           </div>
