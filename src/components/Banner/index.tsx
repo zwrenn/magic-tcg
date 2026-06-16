@@ -1,4 +1,4 @@
-import { GlitterField } from '../glitter-field';
+import { GlitterField } from '../GlitterField';
 import { LCDs } from './LCDs';
 import { MascotOrb } from './MascotOrb';
 import { Title } from './Title';

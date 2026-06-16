@@ -4,7 +4,6 @@ import { countIncomingPending } from '@/lib/requests';
 import { Banner } from './Banner';
 import { Tabs } from './tabs';
 import { Marquee } from './marquee';
-import { GlitterField } from './glitter-field';
 
 /** Banner + folder tabs + proclamation marquee. Hidden on the gate. */
 export async function SiteChrome() {
@@ -27,7 +26,6 @@ export async function SiteChrome() {
       <Banner user={user} stats={stats} />
       <div className="mt-4">
         <div className="relative">
-          <GlitterField density={0.6} />
           <div className="relative z-[3]">
             <Tabs inboxCount={inboxCount} />
           </div>
