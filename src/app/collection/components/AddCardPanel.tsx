@@ -1,25 +1,28 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Printing } from "@/lib/scryfall";
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { Printing } from '@/lib/scryfall';
 
 const CONDITIONS = [
-  "near_mint",
-  "lightly_played",
-  "moderately_played",
-  "heavily_played",
-  "damaged",
-  "mint",
+  'near_mint',
+  'lightly_played',
+  'moderately_played',
+  'heavily_played',
+  'damaged',
+  'mint',
 ];
+
+const emptySelection: string[] = [];
+const emptyPrinting: Printing[] = [];
 
 export function AddCardPanel() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   // name typeahead
-  const [name, setName] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [name, setName] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>(emptySelection);
   const [showSug, setShowSug] = useState(false);
   const [active, setActive] = useState(-1);
   const reqId = useRef(0);
@@ -27,13 +30,13 @@ export function AddCardPanel() {
   // chosen card + printings
   const [chosen, setChosen] = useState<string | null>(null);
   const [prints, setPrints] = useState<Printing[]>([]);
-  const [printId, setPrintId] = useState<string>("");
+  const [printId, setPrintId] = useState<string>('');
   const [loadingPrints, setLoadingPrints] = useState(false);
 
   // add options
   const [quantity, setQuantity] = useState(1);
   const [foil, setFoil] = useState(false);
-  const [condition, setCondition] = useState("near_mint");
+  const [condition, setCondition] = useState('near_mint');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -42,13 +45,15 @@ export function AddCardPanel() {
     if (chosen) return; // already picked a card
     const term = name.trim();
     if (term.length < 2) {
-      setSuggestions([]);
+      setSuggestions(emptySelection);
       return;
     }
     const id = ++reqId.current;
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/card-suggest?q=${encodeURIComponent(term)}`);
+        const res = await fetch(
+          `/api/card-suggest?q=${encodeURIComponent(term)}`
+        );
         const data = await res.json();
         if (id === reqId.current) {
           setSuggestions(data.names ?? []);
@@ -64,18 +69,20 @@ export function AddCardPanel() {
   async function chooseCard(cardName: string) {
     setChosen(cardName);
     setName(cardName);
-    setSuggestions([]);
+    setSuggestions(emptySelection);
     setShowSug(false);
     setLoadingPrints(true);
-    setPrints([]);
+    setPrints(emptyPrinting);
     try {
-      const res = await fetch(`/api/card-prints?name=${encodeURIComponent(cardName)}`);
+      const res = await fetch(
+        `/api/card-prints?name=${encodeURIComponent(cardName)}`
+      );
       const data = await res.json();
-      const list: Printing[] = data.printings ?? [];
+      const list: Printing[] = data.printings ?? emptyPrinting;
       setPrints(list);
-      setPrintId(list[0]?.scryfallId ?? "");
+      setPrintId(list[0]?.scryfallId ?? '');
     } catch {
-      setPrints([]);
+      setPrints(emptyPrinting);
     } finally {
       setLoadingPrints(false);
     }
@@ -83,33 +90,38 @@ export function AddCardPanel() {
 
   function resetCard() {
     setChosen(null);
-    setName("");
-    setPrints([]);
-    setPrintId("");
+    setName('');
+    setPrints(emptyPrinting);
+    setPrintId('');
     setQuantity(1);
     setFoil(false);
-    setCondition("near_mint");
+    setCondition('near_mint');
   }
 
   async function add() {
     if (!printId) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/collection/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scryfallId: printId, quantity, foil, condition }),
+      const res = await fetch('/api/collection/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scryfallId: printId,
+          quantity,
+          foil,
+          condition,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setToast(data.error ?? "Failed to add.");
+        setToast(data.error ?? 'Failed to add.');
       } else {
-        setToast(`Added ${data.added}× ${data.name}${foil ? " (foil)" : ""} ✓`);
+        setToast(`Added ${data.added}× ${data.name}${foil ? ' (foil)' : ''} ✓`);
         resetCard();
         router.refresh(); // re-render the grid + totals
       }
     } catch {
-      setToast("Network error.");
+      setToast('Network error.');
     } finally {
       setBusy(false);
       setTimeout(() => setToast(null), 2500);
@@ -157,16 +169,16 @@ export function AddCardPanel() {
             onFocus={() => setShowSug(true)}
             onKeyDown={(e) => {
               if (!showSug || suggestions.length === 0) return;
-              if (e.key === "ArrowDown") {
+              if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 setActive((a) => Math.min(a + 1, suggestions.length - 1));
-              } else if (e.key === "ArrowUp") {
+              } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 setActive((a) => Math.max(a - 1, 0));
-              } else if (e.key === "Enter") {
+              } else if (e.key === 'Enter') {
                 e.preventDefault();
                 chooseCard(suggestions[active >= 0 ? active : 0]);
-              } else if (e.key === "Escape") {
+              } else if (e.key === 'Escape') {
                 setShowSug(false);
               }
             }}
@@ -184,7 +196,9 @@ export function AddCardPanel() {
                     }}
                     onMouseEnter={() => setActive(i)}
                     className={`block w-full px-3 py-2 text-left text-sm ${
-                      i === active ? "bg-surface-2 text-accent" : "hover:bg-surface-2"
+                      i === active
+                        ? 'bg-surface-2 text-accent'
+                        : 'hover:bg-surface-2'
                     }`}
                   >
                     {s}
@@ -207,7 +221,7 @@ export function AddCardPanel() {
               />
             ) : (
               <div className="flex aspect-[488/680] w-full items-center justify-center rounded-lg border border-border bg-surface-2 p-2 text-center text-xs text-muted">
-                {loadingPrints ? "Loading…" : chosen}
+                {loadingPrints ? 'Loading…' : chosen}
               </div>
             )}
           </div>
@@ -216,7 +230,10 @@ export function AddCardPanel() {
           <div className="flex-1 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">{chosen}</span>
-              <button onClick={resetCard} className="text-xs text-muted hover:text-foreground">
+              <button
+                onClick={resetCard}
+                className="text-xs text-muted hover:text-foreground"
+              >
                 change card
               </button>
             </div>
@@ -232,7 +249,7 @@ export function AddCardPanel() {
                 {prints.map((p) => (
                   <option key={p.scryfallId} value={p.scryfallId}>
                     {p.set} · #{p.collectorNumber} · {p.setName}
-                    {p.priceUsd ? ` · $${p.priceUsd}` : ""}
+                    {p.priceUsd ? ` · $${p.priceUsd}` : ''}
                   </option>
                 ))}
               </select>
@@ -245,7 +262,9 @@ export function AddCardPanel() {
                   type="number"
                   min={1}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, Number(e.target.value) || 1))
+                  }
                   className="mt-1 w-20 rounded-lg border border-border bg-surface-2 px-2 py-2 text-sm outline-none focus:border-accent"
                 />
               </label>
@@ -267,7 +286,7 @@ export function AddCardPanel() {
                 >
                   {CONDITIONS.map((c) => (
                     <option key={c} value={c}>
-                      {c.replace(/_/g, " ")}
+                      {c.replace(/_/g, ' ')}
                     </option>
                   ))}
                 </select>
@@ -279,7 +298,7 @@ export function AddCardPanel() {
               disabled={busy || !printId}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
             >
-              {busy ? "Adding…" : "Add to my collection"}
+              {busy ? 'Adding…' : 'Add to my collection'}
             </button>
           </div>
         </div>

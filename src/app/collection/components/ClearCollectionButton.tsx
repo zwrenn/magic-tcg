@@ -1,9 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export function ClearCollectionButton({ count }: { count: number }) {
+interface ClearCollectionButtonProps {
+  count: number;
+}
+
+export function ClearCollectionButton({ count }: ClearCollectionButtonProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -11,7 +15,7 @@ export function ClearCollectionButton({ count }: { count: number }) {
   async function clear() {
     setBusy(true);
     try {
-      await fetch("/api/collection/clear", { method: "POST" });
+      await fetch('/api/collection/clear', { method: 'POST' });
       router.refresh();
     } finally {
       setBusy(false);
@@ -40,7 +44,7 @@ export function ClearCollectionButton({ count }: { count: number }) {
         disabled={busy}
         className="rounded-md bg-bad px-3 py-1 font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? "Clearing…" : "Yes, clear"}
+        {busy ? 'Clearing…' : 'Yes, clear'}
       </button>
       <button
         onClick={() => setConfirming(false)}

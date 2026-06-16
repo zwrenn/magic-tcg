@@ -1,15 +1,26 @@
-import { requireUser } from "@/lib/auth";
-import { collectionTotals, searchUserCollection } from "@/lib/search";
-import { getFavorites } from "@/lib/favorites";
-import { getDeckUsage } from "@/lib/decks";
-import { CollectionView } from "./collection-view";
-import { AddCardPanel } from "./add-card-panel";
-import { ClearCollectionButton } from "./clear-collection-button";
-import { SearchHotkey } from "@/components/search-hotkey";
+import { Suspense } from 'react';
+import { requireUser } from '@/lib/auth';
+import { collectionTotals } from '@/lib/search';
+import { CollectionViewLoader } from './components/CollectionViewLoader';
+import { AddCardPanel } from './components/AddCardPanel';
+import { ClearCollectionButton } from './components/ClearCollectionButton';
+import { SearchHotkey } from '@/components/search-hotkey';
+import { gridListRowClass } from './components/constants';
 
-// High cap so color/type/set filtering works across the whole collection
-// (client-side). Covers any realistic personal collection.
-const LIMIT = 5000;
+function CollectionGridSkeleton() {
+  return (
+    <div className="mt-5">
+      <ul className={`grid gap-3 ${gridListRowClass}`}>
+        {Array.from({ length: 24 }).map((_, i) => (
+          <li
+            key={i}
+            className="aspect-[488/680] animate-pulse rounded-lg bg-surface-2"
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default async function CollectionPage({
   searchParams,
@@ -17,13 +28,27 @@ export default async function CollectionPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const user = await requireUser();
-  const { q = "" } = await searchParams;
-  const [totals, rows, favorites, deckUsage] = await Promise.all([
-    collectionTotals(user.id),
-    searchUserCollection(user.id, q, LIMIT),
-    getFavorites(user.id),
-    getDeckUsage(),
-  ]);
+  const { q = '' } = await searchParams;
+  const totals = await collectionTotals(user.id);
+
+  let content: React.ReactNode;
+  if (totals.distinct === 0) {
+    content = (
+      <p className="mt-8 text-sm text-muted">
+        No cards yet —{' '}
+        <a href="/import" className="text-accent hover:underline">
+          import your ManaBox CSV
+        </a>
+        .
+      </p>
+    );
+  } else {
+    content = (
+      <Suspense fallback={<CollectionGridSkeleton />}>
+        <CollectionViewLoader userId={user.id} q={q} total={totals.distinct} />
+      </Suspense>
+    );
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
@@ -34,20 +59,22 @@ export default async function CollectionPage({
             {user.name}&apos;s cards
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {totals.distinct.toLocaleString()} distinct ·{" "}
-            {totals.total.toLocaleString()} total ·{" "}
+            {totals.distinct.toLocaleString()} distinct ·{' '}
+            {totals.total.toLocaleString()} total ·{' '}
             <span className="text-foreground">
               ~$
               {totals.valueUsd.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
-            </span>{" "}
+            </span>{' '}
             est. value
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AddCardPanel />
-          {totals.distinct > 0 && <ClearCollectionButton count={totals.distinct} />}
+          {totals.distinct > 0 && (
+            <ClearCollectionButton count={totals.distinct} />
+          )}
         </div>
       </div>
 
@@ -63,28 +90,7 @@ export default async function CollectionPage({
         </button>
       </form>
 
-      {totals.distinct === 0 ? (
-        <p className="mt-8 text-sm text-muted">
-          No cards yet —{" "}
-          <a href="/import" className="text-accent hover:underline">
-            import your ManaBox CSV
-          </a>
-          .
-        </p>
-      ) : rows.length === 0 ? (
-        <p className="mt-8 text-sm text-muted">No cards match “{q}”.</p>
-      ) : (
-        <div className="mt-5">
-          <CollectionView
-            rows={rows}
-            total={totals.distinct}
-            limit={LIMIT}
-            query={q}
-            favorites={[...favorites]}
-            deckUsage={deckUsage}
-          />
-        </div>
-      )}
+      {content}
     </main>
   );
 }

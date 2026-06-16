@@ -1,10 +1,9 @@
-import { getCurrentUser } from "@/lib/auth";
-import { getPodStats } from "@/lib/pod-stats";
-import { countIncomingPending } from "@/lib/requests";
-import { Banner } from "./banner";
-import { Tabs } from "./tabs";
-import { Marquee } from "./marquee";
-import { GlitterField } from "./glitter-field";
+import { getCurrentUser } from '@/lib/auth';
+import { getPodStats } from '@/lib/pod-stats';
+import { countIncomingPending } from '@/lib/requests';
+import { Banner } from './Banner';
+import { Tabs } from './tabs';
+import { Marquee } from './marquee';
 
 /** Banner + folder tabs + proclamation marquee. Hidden on the gate. */
 export async function SiteChrome() {
@@ -17,7 +16,7 @@ export async function SiteChrome() {
 
   const proclamations = [
     `✨ Welcome back, ${user.name}!`,
-    `🃏 ${stats.cards.toLocaleString()} cards in the vault · ${stats.decks} ${stats.decks === 1 ? "deck" : "decks"} built`,
+    `🃏 ${stats.cards.toLocaleString()} cards in the vault · ${stats.decks} ${stats.decks === 1 ? 'deck' : 'decks'} built`,
     `💚 A glowing green bar means someone in the pod already owns that card`,
     `🔮 Paste a decklist to see what you already own`,
   ];
@@ -27,7 +26,6 @@ export async function SiteChrome() {
       <Banner user={user} stats={stats} />
       <div className="mt-4">
         <div className="relative">
-          <GlitterField density={0.6} />
           <div className="relative z-[3]">
             <Tabs inboxCount={inboxCount} />
           </div>

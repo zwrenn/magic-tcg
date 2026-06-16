@@ -1,11 +1,17 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { QuickAddButton } from "./quick-add-button";
-import { RemoveCardButton } from "./remove-card-button";
-import { RemoveFromDeckButton } from "./remove-from-deck-button";
-import { FavoriteStar } from "./favorite-star";
-import { ZoomAskButtons } from "./zoom-ask-buttons";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+import { QuickAddButton } from './quick-add-button';
+import { RemoveCardButton } from './remove-card-button';
+import { RemoveFromDeckButton } from './remove-from-deck-button';
+import { FavoriteStar } from './FavoriteStar';
+import { ZoomAskButtons } from './zoom-ask-buttons';
 
 type ZoomOwner = { name: string; qty: number; foil: boolean };
 type ZoomCard = {
@@ -75,7 +81,7 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
         proxySet: new Set(opts?.proxy?.initial ?? []),
         deck: opts?.deck ?? null,
       }),
-    [],
+    []
   );
   const openList = useCallback(
     (list: ZoomCard[], index: number, opts?: ZoomOpts) =>
@@ -89,31 +95,36 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
               proxySet: new Set(opts?.proxy?.initial ?? []),
               deck: opts?.deck ?? null,
             }
-          : null,
+          : null
       ),
-    [],
+    []
   );
   const close = useCallback(() => setZoom(null), []);
   const step = useCallback(
     (delta: number) =>
       setZoom((z) =>
-        z ? { ...z, index: Math.min(z.list.length - 1, Math.max(0, z.index + delta)) } : z,
+        z
+          ? {
+              ...z,
+              index: Math.min(z.list.length - 1, Math.max(0, z.index + delta)),
+            }
+          : z
       ),
-    [],
+    []
   );
 
   useEffect(() => {
     if (!zoom) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
-      else if (e.key === "ArrowRight") step(1);
-      else if (e.key === "ArrowLeft") step(-1);
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight') step(1);
+      else if (e.key === 'ArrowLeft') step(-1);
     }
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
   }, [zoom, close, step]);
@@ -130,14 +141,31 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
         >
           {many && zoom.index > 0 && (
-            <Arrow side="left" onClick={(e) => { e.stopPropagation(); step(-1); }} />
+            <Arrow
+              side="left"
+              onClick={(e) => {
+                e.stopPropagation();
+                step(-1);
+              }}
+            />
           )}
           {many && zoom.index < zoom.list.length - 1 && (
-            <Arrow side="right" onClick={(e) => { e.stopPropagation(); step(1); }} />
+            <Arrow
+              side="right"
+              onClick={(e) => {
+                e.stopPropagation();
+                step(1);
+              }}
+            />
           )}
-          <div className="flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="flex flex-col items-center gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             {card.image ? (
-              <div className={`relative rounded-2xl ${card.holo ? "foil-frame" : ""}`}>
+              <div
+                className={`relative rounded-2xl ${card.holo ? 'foil-frame' : ''}`}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={card.image}
@@ -148,7 +176,9 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
             ) : (
               <div className="rounded-2xl border border-border bg-surface p-8 text-center">
                 {card.name}
-                <div className="mt-1 text-xs text-muted">No image available</div>
+                <div className="mt-1 text-xs text-muted">
+                  No image available
+                </div>
               </div>
             )}
             {/* Borrow-ask buttons (who in the pod has it) */}
@@ -173,13 +203,21 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
               )}
               {zoom.allowEdit && (
                 <>
-                  <QuickAddButton name={card.name} label="+ Add to my collection" className="px-4 py-1.5 text-sm" />
+                  <QuickAddButton
+                    name={card.name}
+                    label="+ Add to my collection"
+                    className="px-4 py-1.5 text-sm"
+                  />
                   <RemoveCardButton name={card.name} />
                 </>
               )}
               {!zoom.allowEdit && (
                 <>
-                  <QuickAddButton name={card.name} label="✓ I have this" className="px-4 py-1.5 text-sm" />
+                  <QuickAddButton
+                    name={card.name}
+                    label="✓ I have this"
+                    className="px-4 py-1.5 text-sm"
+                  />
                   {card.viewerOwns && <RemoveCardButton name={card.name} />}
                 </>
               )}
@@ -207,11 +245,13 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
                   }}
                   className={`rounded-lg border px-4 py-1.5 text-sm transition ${
                     zoom.proxySet.has(card.key)
-                      ? "border-[var(--purple)] bg-[var(--purple)]/15 text-[var(--purple-deep)]"
-                      : "border-border bg-surface hover:bg-surface-2"
+                      ? 'border-[var(--purple)] bg-[var(--purple)]/15 text-[var(--purple-deep)]'
+                      : 'border-border bg-surface hover:bg-surface-2'
                   }`}
                 >
-                  {zoom.proxySet.has(card.key) ? "🔁 Proxy ✓" : "🔁 Mark as proxy"}
+                  {zoom.proxySet.has(card.key)
+                    ? '🔁 Proxy ✓'
+                    : '🔁 Mark as proxy'}
                 </button>
               )}
               <a
@@ -232,7 +272,8 @@ export function CardZoomProvider({ children }: { children: React.ReactNode }) {
             </div>
             {many && (
               <div className="text-xs text-muted/70">
-                {zoom.index + 1} / {zoom.list.length} · ← → to browse · Esc to close
+                {zoom.index + 1} / {zoom.list.length} · ← → to browse · Esc to
+                close
               </div>
             )}
           </div>
@@ -251,7 +292,7 @@ export function CardZoomButton({
   name,
   image,
   children,
-  className = "",
+  className = '',
   title,
   allowEdit = true,
   holo = false,
@@ -281,18 +322,18 @@ function Arrow({
   side,
   onClick,
 }: {
-  side: "left" | "right";
+  side: 'left' | 'right';
   onClick: (e: React.MouseEvent) => void;
 }) {
   return (
     <button
       onClick={onClick}
-      aria-label={side === "left" ? "Previous card" : "Next card"}
+      aria-label={side === 'left' ? 'Previous card' : 'Next card'}
       className={`absolute top-1/2 z-10 -translate-y-1/2 rounded-full border border-border bg-surface/90 px-3 py-2 text-lg text-foreground hover:bg-surface-2 ${
-        side === "left" ? "left-3 sm:left-6" : "right-3 sm:right-6"
+        side === 'left' ? 'left-3 sm:left-6' : 'right-3 sm:right-6'
       }`}
     >
-      {side === "left" ? "‹" : "›"}
+      {side === 'left' ? '‹' : '›'}
     </button>
   );
 }

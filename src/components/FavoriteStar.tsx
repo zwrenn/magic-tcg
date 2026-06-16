@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 /**
  * A star toggle for favoriting a card (by name). Optimistic; persists via the
@@ -10,7 +10,7 @@ export function FavoriteStar({
   name,
   initial,
   onChange,
-  className = "",
+  className = '',
 }: {
   name: string;
   initial: boolean;
@@ -29,13 +29,13 @@ export function FavoriteStar({
     setBusy(true);
     onChange?.(next);
     try {
-      const res = await fetch("/api/favorites/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/favorites/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
       const data = await res.json();
-      if (typeof data.favorited === "boolean" && data.favorited !== next) {
+      if (typeof data.favorited === 'boolean' && data.favorited !== next) {
         setFav(data.favorited);
         onChange?.(data.favorited);
       }
@@ -51,11 +51,11 @@ export function FavoriteStar({
     <button
       onClick={toggle}
       aria-pressed={fav}
-      aria-label={fav ? "Unfavorite" : "Favorite"}
-      title={fav ? "Favorited" : "Favorite"}
-      className={`leading-none transition ${fav ? "text-warn" : "text-muted hover:text-warn"} ${className}`}
+      aria-label={fav ? 'Unfavorite' : 'Favorite'}
+      title={fav ? 'Favorited' : 'Favorite'}
+      className={`cursor-pointer leading-none transition ${fav ? 'text-warn' : 'text-muted hover:text-warn'} ${className}`}
     >
-      {fav ? "★" : "☆"}
+      {fav ? '★' : '☆'}
     </button>
   );
 }

@@ -22,16 +22,32 @@ Built with Next.js (App Router) + TypeScript + Tailwind, Postgres on
 - A [Scryfall](https://scryfall.com) connection (no key needed — used server-side
   for card metadata, rate-limited and cached)
 
-## 2. Neon setup
+## 2. Database setup
+
+The app works with either a local Postgres instance or a hosted [Neon](https://neon.tech) database.
+
+### Option A — Local Postgres
+
+1. Create a database and enable the trigram extension used for fuzzy card search:
+
+   ```bash
+   createdb magic_tcg # you can name the db whatever you want, but we will assume magic_tcg here
+   psql magic_tcg -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+   ```
+
+2. Your connection string will be `postgresql://localhost:5432/magic_tcg` — set it as `DATABASE_URL` in the next step.
+
+### Option B — Neon (required for Vercel deploys)
 
 1. Create a project at <https://neon.tech>.
 2. In the dashboard, open **Connection Details** and copy the **Pooled
    connection** string. It looks like:
-   ```
+
+   ```text
    postgresql://USER:PASSWORD@HOST-pooler.REGION.aws.neon.tech/DB?sslmode=require
    ```
-3. You don't need to create tables by hand — the migration does it (including
-   enabling the `pg_trgm` extension for fuzzy search).
+
+3. Neon enables `pg_trgm` automatically — no extra step needed.
 
 ## 3. Environment variables
 
@@ -41,10 +57,10 @@ Copy the template and fill it in:
 cp .env.example .env.local
 ```
 
-| Variable         | What it is                                                        |
-| ---------------- | ----------------------------------------------------------------- |
-| `DATABASE_URL`   | Your Neon **pooled** connection string                            |
-| `POD_PASSPHRASE` | A single shared secret everyone types once to get past the gate   |
+| Variable         | What it is                                                      |
+| ---------------- | --------------------------------------------------------------- |
+| `DATABASE_URL`   | Your local or Neon **pooled** connection string (see step 2)    |
+| `POD_PASSPHRASE` | A single shared secret everyone types once to get past the gate |
 
 ## 4. Install, migrate, seed
 
@@ -161,4 +177,3 @@ drizzle/                 generated SQL migrations
 - A chat assistant ("ask the pod a question") using the Anthropic API.
 - Loan / lending tracking.
 - Price tracking beyond the CSV's purchase price.
-```
