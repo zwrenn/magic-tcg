@@ -1,7 +1,8 @@
-import { requireUser } from "@/lib/auth";
-import { getBuildableDecks } from "@/lib/decks";
-import { Sidebar } from "@/components/sidebar";
-import { DeckGrid } from "@/components/deck-grid";
+import { requireUser } from '@/lib/auth';
+import { getBuildableDecks } from '@/lib/decks';
+import { Sidebar } from '@/components/sidebar';
+import { DeckGrid } from '@/components/deck-grid';
+import Link from 'next/link';
 
 export default async function HomePage() {
   const user = await requireUser();
@@ -16,9 +17,12 @@ export default async function HomePage() {
             <div>
               <h2 className="t-hero text-2xl">An empty spellbook</h2>
               <p className="mt-2 text-muted">No decks in the pod yet.</p>
-              <a href="/decks/new" className="gel gel-green mt-4 inline-flex">
+              <Link
+                href="/decks/new"
+                className="gel gel-green mt-4 inline-flex"
+              >
                 ✚ Forge your first deck
-              </a>
+              </Link>
             </div>
           </div>
         ) : (
