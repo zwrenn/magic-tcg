@@ -56,7 +56,7 @@ function CardImage({ image, name }: CardImageProps) {
       src={image}
       alt={name}
       loading="lazy"
-      className="aspect-[488/680] w-full object-cover"
+      className="aspect-[488/680] w-full rounded-lg object-cover"
     />
   ) : (
     <span className="flex aspect-[488/680] w-full items-center justify-center p-2 text-center text-xs text-muted">
