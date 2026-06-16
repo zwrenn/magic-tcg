@@ -29,7 +29,7 @@ If you are doing direct work in a file and it has an "incorrect" name per this c
 
 ## Styling
 
-- Do **not** add anything to `globals.css`. Use Tailwind utility classes or a locally-scoped CSS module (`.module.css`) for any styles that can't be expressed inline.
+- Do **not** add anything to `globals.css` unless necessary to fix existing code. Use Tailwind utility classes or a locally-scoped CSS module (`.module.css`) for any styles that can't be expressed inline.
 
 ## File length and component reuse
 

@@ -177,7 +177,3 @@ drizzle/                 generated SQL migrations
 - A chat assistant ("ask the pod a question") using the Anthropic API.
 - Loan / lending tracking.
 - Price tracking beyond the CSV's purchase price.
-
-```
-
-```
