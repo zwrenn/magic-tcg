@@ -22,7 +22,7 @@ export function CollectionGrid({
   onZoom,
 }: CollectionGridProps) {
   return (
-    <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+    <ul className="grid grid-cols-2 gap-3 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {items.map((r, i) => (
         <GridCard
           key={`${r.name}-${r.foil}-${i}`}

@@ -132,6 +132,7 @@ export function CollectionView({
         setOptions={setOptions}
         onClearAll={filters.clearAll}
       />
+      {/* START - Showing Count - START */}
       <p className="mb-3 text-xs text-muted">
         {query ? (
           <>
@@ -146,6 +147,7 @@ export function CollectionView({
           </>
         )}
       </p>
+      {/* END - Showing Count - END */}
       {view === 'grid' ? (
         <CollectionGrid
           items={visible}
