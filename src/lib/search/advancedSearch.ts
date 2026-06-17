@@ -201,7 +201,7 @@ export async function advancedSearch(
     if (sort === 'cmc')
       return (a.cmc ?? 99) - (b.cmc ?? 99) || a.name.localeCompare(b.name);
     if (sort === 'price')
-      return (Number(b.priceUsd) || 0) - (Number(a.priceUsd) || 0);
+      return (Number(b.priceUsd) || 9999) - (Number(a.priceUsd) || 9999);
     return a.name.localeCompare(b.name);
   });
 

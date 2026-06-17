@@ -134,8 +134,8 @@ function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
     case 'quantity':
       return [d(schema.collectionItems.quantity), nameAsc] as const;
     case 'price': {
-      // Cast to numeric and treat NULL prices as 0 for sorting.
-      const priceExpr = sql<number>`coalesce(${schema.cards.pricesUsd}::numeric, 0)`;
+      // NULL price means untracked/ultra-rare — treat as high value, not zero.
+      const priceExpr = sql<number>`coalesce(${schema.cards.pricesUsd}::numeric, 9999)`;
       return [d(priceExpr), nameAsc] as const;
     }
     case 'set':
