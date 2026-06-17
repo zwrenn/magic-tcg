@@ -12,6 +12,7 @@ import type {
 } from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
+import { AdvancedSearchForm } from '@/components/AdvancedSearchForm';
 import { CollectionFiltersBar } from './CollectionFiltersBar';
 import { CollectionChips } from './CollectionChips';
 import { CollectionGrid } from './CollectionGrid';
@@ -40,10 +41,8 @@ export function CollectionView({
   const [view, setView] = useState<ViewMode>('grid');
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
-  const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const topRef = useRef<HTMLFormElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -57,10 +56,8 @@ export function CollectionView({
   }
 
   const {
-    color,
-    setColor,
-    type,
-    setType,
+    searchValues,
+    setSearchValues,
     set,
     setSet,
     sort,
@@ -74,19 +71,17 @@ export function CollectionView({
     clearAll,
   } = useCollectionFilters();
 
-  // Any filter or search change should reset to the first page.
+  // Reset to page 1 whenever any filter or sort changes.
   useEffect(() => {
     setPage(1);
-  }, [q, color, type, set, sort, dir, favOnly, deckFilter]);
+  }, [searchValues, set, sort, dir, favOnly, deckFilter]);
 
   const { data, isPending, isFetching } = useQuery<CollectionQueryResult>({
     queryKey: [
       'collection',
       userId,
       {
-        q,
-        color,
-        type,
+        searchValues,
         set,
         sortBy: sort,
         sortDir: dir,
@@ -97,9 +92,18 @@ export function CollectionView({
     ],
     queryFn: async () => {
       const sp = new URLSearchParams();
-      if (q) sp.set('q', q);
-      if (color !== 'all') sp.set('color', color);
-      if (type !== 'all') sp.set('type', type);
+      if (searchValues.name) sp.set('q', searchValues.name);
+      if (searchValues.typeLine) sp.set('typeLine', searchValues.typeLine);
+      if (searchValues.colors.length > 0)
+        sp.set('colors', searchValues.colors.join(''));
+      if (searchValues.colorMode !== 'including')
+        sp.set('colorMode', searchValues.colorMode);
+      if (searchValues.colorless) sp.set('colorless', 'true');
+      if (searchValues.rarity) sp.set('rarity', searchValues.rarity);
+      if (searchValues.cmc) {
+        sp.set('cmc', searchValues.cmc);
+        sp.set('cmcOp', searchValues.cmcOp);
+      }
       if (set !== 'all') sp.set('set', set);
       sp.set('sortBy', sort);
       sp.set('sortDir', dir);
@@ -111,8 +115,6 @@ export function CollectionView({
       if (!res.ok) throw new Error('Failed to fetch collection');
       return res.json();
     },
-    // Keep the previous page's data visible while a new fetch is in-flight so
-    // the grid doesn't flash empty on every filter change.
     placeholderData: keepPreviousData,
   });
 
@@ -145,7 +147,6 @@ export function CollectionView({
 
   const itemCount = items.length;
 
-  // Close the lightbox if a refetch shrinks the list past the current zoom index.
   useEffect(() => {
     setZoom((z) => (z !== null && z >= itemCount ? null : z));
   }, [itemCount]);
@@ -165,7 +166,7 @@ export function CollectionView({
         {Array.from({ length: 24 }).map((_, i) => (
           <li
             key={i}
-            className="aspect-[488/680] animate-pulse rounded-lg bg-surface-2"
+            className="aspect-488/680 animate-pulse rounded-lg bg-surface-2"
           />
         ))}
       </ul>
@@ -174,31 +175,15 @@ export function CollectionView({
 
   return (
     <>
-      <form
-        ref={topRef}
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setQ(inputRef.current?.value ?? '');
-        }}
-        className="mb-4"
-      >
-        <input
-          ref={inputRef}
-          type="search"
-          name="q"
-          defaultValue={q}
-          placeholder="Search your cards by name…  (press / )"
-          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
+      <div ref={topRef} className="module mb-4 p-4">
+        <AdvancedSearchForm
+          values={searchValues}
+          onChange={setSearchValues}
+          onSubmit={setSearchValues}
+          submitLabel="Search my collection"
         />
-      </form>
+      </div>
       <CollectionFiltersBar
-        color={color}
-        onColorChange={setColor}
-        type={type}
-        onTypeChange={setType}
-        set={set}
-        onSetChange={setSet}
         sort={sort}
         onSortChange={setSort}
         dir={dir}
@@ -209,32 +194,23 @@ export function CollectionView({
         onFavOnlyToggle={() => setFavOnly((f) => !f)}
         view={view}
         onViewChange={pickView}
+        set={set}
+        onSetChange={setSet}
         setOptions={setOptions}
       />
       <CollectionChips
-        q={q}
-        onClearQ={() => {
-          setQ('');
-          if (inputRef.current) inputRef.current.value = '';
-        }}
+        searchValues={searchValues}
+        onChangeSearchValues={setSearchValues}
         favOnly={favOnly}
         onClearFavOnly={() => setFavOnly(false)}
-        color={color}
-        onClearColor={() => setColor('all')}
-        type={type}
-        onClearType={() => setType('all')}
         set={set}
         onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={() => {
-          clearAll();
-          setQ('');
-          if (inputRef.current) inputRef.current.value = '';
-        }}
+        onClearAll={clearAll}
       />
       <p className="mb-3 text-xs text-muted">
         {total.toLocaleString()} card{total === 1 ? '' : 's'}
-        {q && <> matching &ldquo;{q}&rdquo;</>}
+        {searchValues.name && <> matching &ldquo;{searchValues.name}&rdquo;</>}
         {Math.ceil(total / LIMIT) > 1 && (
           <>
             {' '}
@@ -242,7 +218,6 @@ export function CollectionView({
           </>
         )}
       </p>
-      {/* Dim the grid while a background refetch is in progress. */}
       <div
         className={
           isFetching ? 'opacity-60 transition-opacity duration-150' : ''

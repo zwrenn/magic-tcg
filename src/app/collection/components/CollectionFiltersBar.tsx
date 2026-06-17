@@ -2,12 +2,6 @@
 
 import { Select } from '@/components/Select';
 import { Toggle } from '@/components/Toggle';
-import {
-  COLOR_BUCKETS,
-  TYPE_BUCKETS,
-  type ColorBucket,
-  type TypeBucket,
-} from '@/lib/card-types';
 import type { SortKey } from '@/lib/search/collection';
 
 type ViewMode = 'grid' | 'list';
@@ -18,12 +12,6 @@ interface SelectOption {
 }
 
 interface CollectionFiltersBarProps {
-  color: ColorBucket | 'all';
-  onColorChange: (v: ColorBucket | 'all') => void;
-  type: TypeBucket | 'all';
-  onTypeChange: (v: TypeBucket | 'all') => void;
-  set: string;
-  onSetChange: (v: string) => void;
   sort: SortKey;
   onSortChange: (v: SortKey) => void;
   dir: 'asc' | 'desc';
@@ -34,16 +22,12 @@ interface CollectionFiltersBarProps {
   onFavOnlyToggle: () => void;
   view: ViewMode;
   onViewChange: (v: ViewMode) => void;
+  set: string;
+  onSetChange: (v: string) => void;
   setOptions: SelectOption[];
 }
 
 export function CollectionFiltersBar({
-  color,
-  onColorChange,
-  type,
-  onTypeChange,
-  set,
-  onSetChange,
   sort,
   onSortChange,
   dir,
@@ -54,6 +38,8 @@ export function CollectionFiltersBar({
   onFavOnlyToggle,
   view,
   onViewChange,
+  set,
+  onSetChange,
   setOptions,
 }: CollectionFiltersBarProps) {
   return (
@@ -68,24 +54,6 @@ export function CollectionFiltersBar({
       >
         ★ Favorites
       </button>
-      <Select
-        label="Color"
-        value={color}
-        onChange={(v) => onColorChange(v as ColorBucket | 'all')}
-        options={[
-          { value: 'all', label: 'All colors' },
-          ...COLOR_BUCKETS.map((c) => ({ value: c, label: c })),
-        ]}
-      />
-      <Select
-        label="Type"
-        value={type}
-        onChange={(v) => onTypeChange(v as TypeBucket | 'all')}
-        options={[
-          { value: 'all', label: 'All types' },
-          ...TYPE_BUCKETS.map((t) => ({ value: t, label: t })),
-        ]}
-      />
       <Select
         label="Set"
         value={set}

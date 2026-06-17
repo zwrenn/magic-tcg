@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { SortKey } from '@/lib/search/collection';
-import type { ColorBucket, TypeBucket } from '@/lib/card-types';
+import {
+  type AdvancedSearchValues,
+  EMPTY_SEARCH_VALUES,
+} from '@/components/AdvancedSearchForm';
 
 export type DeckUsage = Record<
   string,
@@ -8,26 +11,31 @@ export type DeckUsage = Record<
 >;
 
 export function useCollectionFilters() {
-  const [color, setColor] = useState<ColorBucket | 'all'>('all');
-  const [type, setType] = useState<TypeBucket | 'all'>('all');
+  // Submit-based search filters — applied when the form is submitted.
+  const [searchValues, setSearchValues] =
+    useState<AdvancedSearchValues>(EMPTY_SEARCH_VALUES);
+
+  // Instant filters — applied immediately without a form submit.
   const [set, setSet] = useState<string>('all');
   const [sort, setSort] = useState<SortKey>('name');
   const [dir, setDir] = useState<'asc' | 'desc'>('asc');
   const [favOnly, setFavOnly] = useState(false);
   const [deckFilter, setDeckFilter] = useState<'any' | 'in' | 'out'>('any');
 
+  function clearSearchValues() {
+    setSearchValues(EMPTY_SEARCH_VALUES);
+  }
+
   function clearAll() {
-    setFavOnly(false);
-    setColor('all');
-    setType('all');
+    setSearchValues(EMPTY_SEARCH_VALUES);
     setSet('all');
+    setFavOnly(false);
   }
 
   return {
-    color,
-    setColor,
-    type,
-    setType,
+    searchValues,
+    setSearchValues,
+    clearSearchValues,
     set,
     setSet,
     sort,

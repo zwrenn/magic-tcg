@@ -3,8 +3,6 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import type { Card, CollectionItem } from '@/db/schema';
 import { normalizeName } from '../normalize';
-import { COLOR_BUCKETS, TYPE_BUCKETS } from '../card-types';
-import type { ColorBucket, TypeBucket } from '../card-types';
 
 /** Aggregate stats for a user's collection: distinct entries, total copies, and estimated value. */
 export async function collectionTotals(
@@ -90,8 +88,15 @@ export type SortKey = (typeof SORT_KEYS)[number];
 
 export type CollectionQueryOptions = {
   q?: string;
-  color?: ColorBucket | 'all';
-  type?: TypeBucket | 'all';
+  // Advanced search-style filters (replace the old color/type bucket params)
+  typeLine?: string;
+  colors?: string; // joined WUBRG string, e.g. "WU"
+  colorMode?: 'including' | 'exact' | 'atmost';
+  colorless?: boolean;
+  rarity?: string;
+  cmc?: number;
+  cmcOp?: 'eq' | 'lte' | 'gte';
+  // Instant filters
   set?: string | 'all';
   sortBy?: SortKey;
   sortDir?: 'asc' | 'desc';
@@ -107,15 +112,6 @@ export type CollectionQueryResult = {
   sets: { value: string; label: string }[];
 };
 
-// Used by the API route to validate incoming query params against known values.
-export const VALID_COLORS: readonly (ColorBucket | 'all')[] = [
-  'all',
-  ...COLOR_BUCKETS,
-];
-export const VALID_TYPES: readonly (TypeBucket | 'all')[] = [
-  'all',
-  ...TYPE_BUCKETS,
-];
 export const VALID_SORT_KEYS: readonly SortKey[] = SORT_KEYS;
 
 /**
@@ -182,14 +178,21 @@ function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
  *   3. All distinct sets the user owns — intentionally ignores active filters so
  *      the set dropdown always shows every option regardless of the current view.
  */
+const WUBRG = ['W', 'U', 'B', 'R', 'G'] as const;
+
 export async function searchUserCollection(
   userId: number,
   options: CollectionQueryOptions = {}
 ): Promise<CollectionQueryResult> {
   const {
     q = '',
-    color = 'all',
-    type = 'all',
+    typeLine,
+    colors,
+    colorMode = 'including',
+    colorless = false,
+    rarity,
+    cmc,
+    cmcOp = 'eq',
     set = 'all',
     sortBy = 'name',
     sortDir = 'asc',
@@ -208,43 +211,50 @@ export async function searchUserCollection(
     conds.push(sql`${schema.cards.normalizedName} ILIKE ${'%' + qNorm + '%'}`);
   }
 
-  if (color !== 'all') {
-    // colorIdentity is stored as a comma-joined letter string (e.g. "W,U").
-    // Colorless cards have an empty string or NULL; multicolor cards contain a comma.
-    switch (color) {
-      case 'Colorless':
-        conds.push(sql`coalesce(${schema.cards.colorIdentity}, '') = ''`);
-        break;
-      case 'Multicolor':
-        conds.push(sql`${schema.cards.colorIdentity} LIKE '%,%'`);
-        break;
-      default: {
-        const letter: Record<string, string> = {
-          White: 'W',
-          Blue: 'U',
-          Black: 'B',
-          Red: 'R',
-          Green: 'G',
-        };
-        if (letter[color])
-          conds.push(sql`${schema.cards.colorIdentity} = ${letter[color]}`);
-      }
+  if (typeLine) {
+    for (const word of typeLine.trim().split(/\s+/).filter(Boolean)) {
+      conds.push(sql`${schema.cards.typeLine} ILIKE ${'%' + word + '%'}`);
     }
   }
 
-  if (type !== 'all') {
-    // CASE expression mirrors typeBucket() priority so filter results match the bucket labels.
-    conds.push(sql`case
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%creature%' then 'Creature'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%planeswalker%' then 'Planeswalker'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%instant%' then 'Instant'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%sorcery%' then 'Sorcery'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%battle%' then 'Battle'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%artifact%' then 'Artifact'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%enchantment%' then 'Enchantment'
-      when lower(coalesce(${schema.cards.typeLine}, '')) like '%land%' then 'Land'
-      else 'Other'
-    end = ${type}`);
+  if (rarity) {
+    conds.push(sql`lower(${schema.cards.rarity}) = ${rarity.toLowerCase()}`);
+  }
+
+  if (cmc != null && Number.isFinite(cmc)) {
+    if (cmcOp === 'lte') conds.push(sql`${schema.cards.cmc} <= ${cmc}`);
+    else if (cmcOp === 'gte') conds.push(sql`${schema.cards.cmc} >= ${cmc}`);
+    else conds.push(sql`${schema.cards.cmc} = ${cmc}`);
+  }
+
+  const ci = schema.cards.colorIdentity;
+  if (colorless) {
+    conds.push(sql`coalesce(${ci}, '') = ''`);
+  } else if (colors) {
+    const sel = new Set(
+      colors
+        .toUpperCase()
+        .split('')
+        .filter((c) => WUBRG.includes(c as never))
+    );
+    if (sel.size > 0) {
+      for (const c of WUBRG) {
+        const has = sel.has(c);
+        if (colorMode === 'including') {
+          if (has) conds.push(sql`${ci} ILIKE ${'%' + c + '%'}`);
+        } else if (colorMode === 'exact') {
+          conds.push(
+            has
+              ? sql`${ci} ILIKE ${'%' + c + '%'}`
+              : sql`${ci} NOT ILIKE ${'%' + c + '%'}`
+          );
+        } else {
+          // atmost: selected optional, unselected forbidden
+          if (!has)
+            conds.push(sql`coalesce(${ci}, '') NOT ILIKE ${'%' + c + '%'}`);
+        }
+      }
+    }
   }
 
   if (set !== 'all') {
