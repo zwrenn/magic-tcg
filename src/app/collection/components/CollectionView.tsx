@@ -1,12 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   useQuery,
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query';
-import type { CollectionQueryResult } from '@/lib/search/collection';
+import type {
+  CollectionQueryResult,
+  CollectionRow,
+} from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
 import { CollectionFiltersBar } from './CollectionFiltersBar';
@@ -24,6 +27,9 @@ interface CollectionViewProps {
   deckUsage?: DeckUsage;
 }
 
+const emptyItems = [] as CollectionRow[];
+const emptyOptions = [] as { value: string; label: string }[];
+
 export function CollectionView({
   userId,
   favorites,
@@ -33,14 +39,8 @@ export function CollectionView({
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
   const [q, setQ] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-
-  // 300 ms debounce so the API isn't hit on every keystroke.
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedQ(q), 300);
-    return () => clearTimeout(id);
-  }, [q]);
 
   useEffect(() => {
     const saved = localStorage.getItem('pod_collection_view');
@@ -75,7 +75,7 @@ export function CollectionView({
       'collection',
       userId,
       {
-        q: debouncedQ,
+        q,
         color,
         type,
         set,
@@ -87,7 +87,7 @@ export function CollectionView({
     ],
     queryFn: async () => {
       const sp = new URLSearchParams();
-      if (debouncedQ) sp.set('q', debouncedQ);
+      if (q) sp.set('q', q);
       if (color !== 'all') sp.set('color', color);
       if (type !== 'all') sp.set('type', type);
       if (set !== 'all') sp.set('set', set);
@@ -104,8 +104,8 @@ export function CollectionView({
     placeholderData: keepPreviousData,
   });
 
-  const items = data?.items ?? [];
-  const setOptions = data?.sets ?? [];
+  const items = data?.items ?? emptyItems;
+  const setOptions = data?.sets ?? emptyOptions;
   const total = data?.total ?? 0;
 
   function onFavChange(normalized: string, favorited: boolean) {
@@ -156,11 +156,19 @@ export function CollectionView({
 
   return (
     <>
-      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4">
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQ(inputRef.current?.value ?? '');
+        }}
+        className="mb-4"
+      >
         <input
+          ref={inputRef}
           type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          name="q"
+          defaultValue={q}
           placeholder="Search your cards by name…  (press / )"
           className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
         />
