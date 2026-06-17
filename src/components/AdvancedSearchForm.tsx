@@ -9,6 +9,9 @@ export interface AdvancedSearchValues {
   rarity: string;
   cmc: string;
   cmcOp: 'eq' | 'lte' | 'gte';
+  // Optional — only present when those fields are rendered in the form
+  sort?: string;
+  owner?: string;
 }
 
 export const EMPTY_SEARCH_VALUES: AdvancedSearchValues = {
@@ -23,20 +26,17 @@ export const EMPTY_SEARCH_VALUES: AdvancedSearchValues = {
 };
 
 interface SortInFormConfig {
-  value: string;
+  defaultValue?: string;
   options: { value: string; label: string }[];
-  onChange: (v: string) => void;
 }
 
 interface OwnerInFormConfig {
-  value: string;
+  defaultValue?: string;
   options: { value: string; label: string }[];
-  onChange: (v: string) => void;
 }
 
 interface AdvancedSearchFormProps {
-  values: AdvancedSearchValues;
-  onChange: (values: AdvancedSearchValues) => void;
+  defaultValues?: Partial<AdvancedSearchValues>;
   onSubmit: (values: AdvancedSearchValues) => void;
   submitLabel?: string;
   sortInForm?: SortInFormConfig;
@@ -46,51 +46,68 @@ interface AdvancedSearchFormProps {
 const COLORS = ['W', 'U', 'B', 'R', 'G'] as const;
 
 export function AdvancedSearchForm({
-  values,
-  onChange,
+  defaultValues,
   onSubmit,
   submitLabel = 'Search',
   sortInForm,
   ownerInForm,
 }: AdvancedSearchFormProps) {
-  function set<K extends keyof AdvancedSearchValues>(
-    key: K,
-    value: AdvancedSearchValues[K]
-  ) {
-    onChange({ ...values, [key]: value });
-  }
-
-  function toggleColor(c: string) {
-    const next = values.colors.includes(c)
-      ? values.colors.filter((x) => x !== c)
-      : [...values.colors, c];
-    set('colors', next);
+  function handleAction(fd: FormData) {
+    onSubmit({
+      name: (fd.get('name') as string) ?? '',
+      typeLine: (fd.get('typeLine') as string) ?? '',
+      colors: fd.getAll('colors') as string[],
+      colorMode: ((fd.get('colorMode') as string) ||
+        'including') as AdvancedSearchValues['colorMode'],
+      colorless: fd.get('colorless') === 'on',
+      rarity: (fd.get('rarity') as string) ?? '',
+      cmc: (fd.get('cmc') as string) ?? '',
+      cmcOp: ((fd.get('cmcOp') as string) ||
+        'eq') as AdvancedSearchValues['cmcOp'],
+      ...(sortInForm && {
+        sort: (fd.get('sort') as string) || sortInForm.defaultValue || 'name',
+      }),
+      ...(ownerInForm && {
+        owner:
+          (fd.get('owner') as string) || ownerInForm.defaultValue || 'anyone',
+      }),
+    });
   }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(values);
-      }}
-      className="space-y-3"
-    >
+    <form action={handleAction} className="space-y-3">
+      {/* Name is the primary field — full width, visually prominent */}
+      <Field label="Card name">
+        <input
+          name="name"
+          defaultValue={defaultValues?.name ?? ''}
+          placeholder="e.g. Smothering Tithe"
+          className="input text-base"
+          autoFocus
+        />
+      </Field>
+
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Card name">
-          <input
-            value={values.name}
-            onChange={(e) => set('name', e.target.value)}
-            placeholder="part of a name"
-            className="input"
-          />
-        </Field>
         <Field label="Type line">
           <input
-            value={values.typeLine}
-            onChange={(e) => set('typeLine', e.target.value)}
+            name="typeLine"
+            defaultValue={defaultValues?.typeLine ?? ''}
             placeholder="e.g. legendary creature"
             className="input"
           />
+        </Field>
+        <Field label="Rarity">
+          <select
+            name="rarity"
+            defaultValue={defaultValues?.rarity ?? ''}
+            className="input"
+          >
+            <option value="">Any</option>
+            <option value="common">Common</option>
+            <option value="uncommon">Uncommon</option>
+            <option value="rare">Rare</option>
+            <option value="mythic">Mythic</option>
+          </select>
         </Field>
       </div>
 
@@ -104,8 +121,9 @@ export function AdvancedSearchForm({
               >
                 <input
                   type="checkbox"
-                  checked={values.colors.includes(c)}
-                  onChange={() => toggleColor(c)}
+                  name="colors"
+                  value={c}
+                  defaultChecked={defaultValues?.colors?.includes(c) ?? false}
                   className="accent-[var(--purple)]"
                 />
                 <i className={`ms ms-${c.toLowerCase()} ms-cost`} aria-hidden />{' '}
@@ -114,13 +132,8 @@ export function AdvancedSearchForm({
             ))}
           </div>
           <select
-            value={values.colorMode}
-            onChange={(e) =>
-              set(
-                'colorMode',
-                e.target.value as AdvancedSearchValues['colorMode']
-              )
-            }
+            name="colorMode"
+            defaultValue={defaultValues?.colorMode ?? 'including'}
             className="rounded-lg border border-border bg-surface px-2 py-1 text-sm"
           >
             <option value="including">including these</option>
@@ -130,8 +143,8 @@ export function AdvancedSearchForm({
           <label className="flex cursor-pointer items-center gap-1.5 text-sm">
             <input
               type="checkbox"
-              checked={values.colorless}
-              onChange={(e) => set('colorless', e.target.checked)}
+              name="colorless"
+              defaultChecked={defaultValues?.colorless ?? false}
               className="accent-[var(--purple)]"
             />
             Colorless only
@@ -140,26 +153,11 @@ export function AdvancedSearchForm({
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Rarity">
-          <select
-            value={values.rarity}
-            onChange={(e) => set('rarity', e.target.value)}
-            className="input"
-          >
-            <option value="">Any</option>
-            <option value="common">Common</option>
-            <option value="uncommon">Uncommon</option>
-            <option value="rare">Rare</option>
-            <option value="mythic">Mythic</option>
-          </select>
-        </Field>
         <Field label="Mana value">
           <div className="flex gap-1.5">
             <select
-              value={values.cmcOp}
-              onChange={(e) =>
-                set('cmcOp', e.target.value as AdvancedSearchValues['cmcOp'])
-              }
+              name="cmcOp"
+              defaultValue={defaultValues?.cmcOp ?? 'eq'}
               className="input !w-auto"
             >
               <option value="eq">=</option>
@@ -168,9 +166,9 @@ export function AdvancedSearchForm({
             </select>
             <input
               type="number"
+              name="cmc"
               min="0"
-              value={values.cmc}
-              onChange={(e) => set('cmc', e.target.value)}
+              defaultValue={defaultValues?.cmc ?? ''}
               placeholder="any"
               className="input"
             />
@@ -179,8 +177,8 @@ export function AdvancedSearchForm({
         {ownerInForm && (
           <Field label="Owned by">
             <select
-              value={ownerInForm.value}
-              onChange={(e) => ownerInForm.onChange(e.target.value)}
+              name="owner"
+              defaultValue={ownerInForm.defaultValue ?? 'anyone'}
               className="input"
             >
               {ownerInForm.options.map((o) => (
@@ -191,15 +189,12 @@ export function AdvancedSearchForm({
             </select>
           </Field>
         )}
-      </div>
-
-      <div className="flex items-center gap-3">
         {sortInForm && (
           <Field label="Sort">
             <select
-              value={sortInForm.value}
-              onChange={(e) => sortInForm.onChange(e.target.value)}
-              className="input !w-auto"
+              name="sort"
+              defaultValue={sortInForm.defaultValue ?? 'name'}
+              className="input"
             >
               {sortInForm.options.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -209,10 +204,11 @@ export function AdvancedSearchForm({
             </select>
           </Field>
         )}
-        <button type="submit" className="gel gel-purple mt-5">
-          {submitLabel}
-        </button>
       </div>
+
+      <button type="submit" className="gel gel-purple">
+        {submitLabel}
+      </button>
     </form>
   );
 }

@@ -1,5 +1,4 @@
 import { requireUser } from '@/lib/auth';
-import { globalSearch } from '@/lib/search/globalSearch';
 import {
   advancedSearch,
   hasAdvancedFilters,
@@ -36,8 +35,6 @@ export default async function SearchPage({
   const viewer = await requireUser();
   const sp = await searchParams;
 
-  const isAdvanced = one(sp.adv) === '1';
-
   const colorArr = Array.isArray(sp.color)
     ? sp.color
     : sp.color
@@ -70,8 +67,6 @@ export default async function SearchPage({
     cmcOp: filters.cmcOp ?? 'eq',
   };
 
-  const q = one(sp.q);
-
   const [favorites, deckUsage, pendingAsks] = await Promise.all([
     getFavorites(viewer.id),
     getDeckUsage(),
@@ -80,13 +75,9 @@ export default async function SearchPage({
   const pendingSet = new Set(pendingAsks);
 
   let results: (GlobalSearchResult | AdvancedResult)[] = [];
-  let ran = false;
-  if (isAdvanced && hasAdvancedFilters(filters)) {
+  const ran = hasAdvancedFilters(filters);
+  if (ran) {
     results = await advancedSearch(filters);
-    ran = true;
-  } else if (!isAdvanced && q.trim()) {
-    results = await globalSearch(q);
-    ran = true;
   }
 
   const items: SearchResultItem[] = results.map((r) => {
@@ -127,13 +118,11 @@ export default async function SearchPage({
         defaultOwner={filters.owner ?? 'anyone'}
         podMembers={POD_MEMBERS}
         viewerName={viewer.name}
-        isAdvanced={isAdvanced}
-        simpleQ={isAdvanced ? '' : q}
       />
 
       {ran && results.length === 0 && (
         <p className="mt-8 text-sm text-muted">
-          Nothing in the pod matches{isAdvanced ? ' those filters' : ` "${q}"`}.
+          Nothing in the pod matches those filters.
         </p>
       )}
 
@@ -141,7 +130,7 @@ export default async function SearchPage({
         <>
           <p className="mt-6 text-xs text-muted">
             {results.length} card{results.length === 1 ? '' : 's'}
-            {isAdvanced && results.length >= 80 ? ' (showing first 80)' : ''}
+            {results.length >= 80 ? ' (showing first 80)' : ''}
             {' · '}click a card, then use ← → to browse
           </p>
           <SearchResults items={items} viewerName={viewer.name} />

@@ -42,6 +42,7 @@ export function CollectionView({
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
   const [page, setPage] = useState(1);
+  const [formKey, setFormKey] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -175,10 +176,10 @@ export function CollectionView({
 
   return (
     <>
-      <div ref={topRef} className="module mb-4 p-4">
+      <div ref={topRef} className="mb-4">
         <AdvancedSearchForm
-          values={searchValues}
-          onChange={setSearchValues}
+          key={formKey}
+          defaultValues={searchValues}
           onSubmit={setSearchValues}
           submitLabel="Search my collection"
         />
@@ -200,13 +201,19 @@ export function CollectionView({
       />
       <CollectionChips
         searchValues={searchValues}
-        onChangeSearchValues={setSearchValues}
+        onChangeSearchValues={(v) => {
+          setSearchValues(v);
+          setFormKey((k) => k + 1);
+        }}
         favOnly={favOnly}
         onClearFavOnly={() => setFavOnly(false)}
         set={set}
         onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={clearAll}
+        onClearAll={() => {
+          clearAll();
+          setFormKey((k) => k + 1);
+        }}
       />
       <p className="mb-3 text-xs text-muted">
         {total.toLocaleString()} card{total === 1 ? '' : 's'}
