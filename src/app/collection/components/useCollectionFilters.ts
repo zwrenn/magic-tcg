@@ -3,7 +3,7 @@ import type { SortKey } from '@/lib/search/collection';
 import {
   type AdvancedSearchValues,
   EMPTY_SEARCH_VALUES,
-} from '@/components/AdvancedSearchForm';
+} from '@/lib/search/queryParser';
 
 export type DeckUsage = Record<
   string,

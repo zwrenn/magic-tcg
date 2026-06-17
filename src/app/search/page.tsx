@@ -9,11 +9,10 @@ import type { GlobalSearchResult } from '@/lib/search/globalSearch';
 import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
 import { getPendingOutgoingKeys } from '@/lib/requests';
-import { POD_MEMBERS } from '@/lib/pod';
+import { parseQuery } from '@/lib/search/queryParser';
 import { SearchHotkey } from '@/components/search-hotkey';
 import { SearchResults, type SearchResultItem } from './search-results';
 import { SearchPanel } from './SearchPanel';
-import type { AdvancedSearchValues } from '@/components/AdvancedSearchForm';
 
 function ownerDecksMap(
   decks: { owner: string; id: number; name: string }[]
@@ -35,36 +34,20 @@ export default async function SearchPage({
   const viewer = await requireUser();
   const sp = await searchParams;
 
-  const colorArr = Array.isArray(sp.color)
-    ? sp.color
-    : sp.color
-      ? [sp.color]
-      : [];
+  const rawQuery = one(sp.q);
+  const parsed = parseQuery(rawQuery);
 
   const filters: AdvancedFilters = {
-    name: one(sp.q),
-    type: one(sp.type),
-    colors: colorArr.join(''),
-    colorMode: (one(sp.colormode) ||
-      'including') as AdvancedFilters['colorMode'],
-    colorless: one(sp.colorless) === '1',
-    rarity: one(sp.rarity),
-    cmc: one(sp.cmc) ? Number(one(sp.cmc)) : undefined,
-    cmcOp: (one(sp.cmcop) || 'eq') as AdvancedFilters['cmcOp'],
-    owner: one(sp.owner) || 'anyone',
-    sort: (one(sp.sort) || 'name') as AdvancedFilters['sort'],
-  };
-
-  // Shape for the client AdvancedSearchForm component.
-  const formValues: AdvancedSearchValues = {
-    name: filters.name ?? '',
-    typeLine: filters.type ?? '',
-    colors: colorArr,
-    colorMode: filters.colorMode ?? 'including',
-    colorless: filters.colorless ?? false,
-    rarity: filters.rarity ?? '',
-    cmc: filters.cmc != null ? String(filters.cmc) : '',
-    cmcOp: filters.cmcOp ?? 'eq',
+    name: parsed.name || undefined,
+    type: parsed.typeLine || undefined,
+    colors: parsed.colors.join('') || undefined,
+    colorMode: parsed.colorMode,
+    colorless: parsed.colorless || undefined,
+    rarity: parsed.rarity || undefined,
+    cmc: parsed.cmc ? Number(parsed.cmc) : undefined,
+    cmcOp: parsed.cmcOp,
+    owner: parsed.owner || 'anyone',
+    sort: (parsed.sort || 'name') as AdvancedFilters['sort'],
   };
 
   const [favorites, deckUsage, pendingAsks] = await Promise.all([
@@ -112,13 +95,7 @@ export default async function SearchPage({
         to focus search.
       </p>
 
-      <SearchPanel
-        defaultValues={formValues}
-        defaultSort={filters.sort ?? 'name'}
-        defaultOwner={filters.owner ?? 'anyone'}
-        podMembers={POD_MEMBERS}
-        viewerName={viewer.name}
-      />
+      <SearchPanel defaultQuery={rawQuery} />
 
       {ran && results.length === 0 && (
         <p className="mt-8 text-sm text-muted">

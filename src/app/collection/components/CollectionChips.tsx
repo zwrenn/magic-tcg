@@ -1,7 +1,7 @@
 'use client';
 
 import { Chip } from '@/components/Chip';
-import type { AdvancedSearchValues } from '@/components/AdvancedSearchForm';
+import type { AdvancedSearchValues } from '@/lib/search/queryParser';
 import { ComponentProps } from 'react';
 
 interface CollectionChipsProps {

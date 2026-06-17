@@ -12,7 +12,8 @@ import type {
 } from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
-import { AdvancedSearchForm } from '@/components/AdvancedSearchForm';
+import { parseQuery, serializeQuery } from '@/lib/search/queryParser';
+import { SearchInput } from '@/components/SearchInput';
 import { CollectionFiltersBar } from './CollectionFiltersBar';
 import { CollectionChips } from './CollectionChips';
 import { CollectionGrid } from './CollectionGrid';
@@ -177,10 +178,10 @@ export function CollectionView({
   return (
     <>
       <div ref={topRef} className="mb-4">
-        <AdvancedSearchForm
+        <SearchInput
           key={formKey}
-          defaultValues={searchValues}
-          onSubmit={setSearchValues}
+          defaultQuery={serializeQuery(searchValues)}
+          onSubmit={(raw) => setSearchValues(parseQuery(raw))}
           submitLabel="Search my collection"
         />
       </div>
