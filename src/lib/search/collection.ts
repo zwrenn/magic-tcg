@@ -6,7 +6,7 @@ import { normalizeName } from '../normalize';
 import { COLOR_BUCKETS, TYPE_BUCKETS } from '../card-types';
 import type { ColorBucket, TypeBucket } from '../card-types';
 
-/** Aggregate stats for a user's collection: distinct card count, total copies, and estimated value. */
+/** Aggregate stats for a user's collection: distinct entries, total copies, and estimated value. */
 export async function collectionTotals(
   userId: number
 ): Promise<{ distinct: number; total: number; valueUsd: number }> {
