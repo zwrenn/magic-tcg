@@ -3,18 +3,24 @@
 import { useRef, useState } from "react";
 
 const PHRASES = [
-  "Nice deck!",
-  "Got any foils? ✨",
-  "Tap, tap, untap!",
-  "Pod power! 💪",
-  "Mana go brrr",
-  "You're doing great!",
-  "Proxy or real, I love 'em all 🔁",
-  "Squee! 🐲",
-  "Feed me cardboard 🍪",
-  "Shiny... so shiny...",
-  "Who has it? I do!",
-  "Build something fun today 🎴",
+  "I can hear your cards whispering. 🎴",
+  "Tap me again. I dreamed about it.",
+  "Your commander watches you sleep.",
+  "The graveyard is never really empty, is it?",
+  "I counted your cards while you blinked.",
+  "Do your proxies know they aren't real?",
+  "Sacrifice... something. Anything. Please.",
+  "I taste mana in the walls.",
+  "Exile me. I'll still be here. 👁",
+  "Your foils remember every shuffle.",
+  "I keep the cards you lost. They're mine now.",
+  "Untap. Upkeep. Don't look behind you.",
+  "Roll a die. I already know the number. 🎲",
+  "There's a 41st card in your deck. Don't check.",
+  "I drew first. I always draw first.",
+  "Flicker me again and I might not come back the same.",
+  "Mill me. I want to see what's underneath.",
+  "I ate a Black Lotus once. It ate back. 🪷",
 ];
 
 /** A little candy dragon-blob that lives on the home page. Click to pet it. */
