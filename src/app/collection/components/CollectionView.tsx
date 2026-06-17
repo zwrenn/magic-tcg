@@ -143,14 +143,20 @@ export function CollectionView({
     }
   }
 
+  const itemCount = items.length;
+
+  // Close the lightbox if a refetch shrinks the list past the current zoom index.
+  useEffect(() => {
+    setZoom((z) => (z !== null && z >= itemCount ? null : z));
+  }, [itemCount]);
+
   const close = useCallback(() => setZoom(null), []);
   const step = useCallback(
     (delta: number) =>
       setZoom((z) =>
-        z === null ? z : Math.min(items.length - 1, Math.max(0, z + delta))
+        z === null ? z : Math.min(itemCount - 1, Math.max(0, z + delta))
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data?.items]
+    [itemCount]
   );
 
   if (isPending) {
