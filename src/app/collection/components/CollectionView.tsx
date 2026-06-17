@@ -18,6 +18,7 @@ import { CollectionGrid } from './CollectionGrid';
 import { CollectionList } from './CollectionList';
 import { CollectionLightbox } from './CollectionLightbox';
 import { gridListRowClass } from './constants';
+import { Pagination } from '@/components/Pagination';
 
 type ViewMode = 'grid' | 'list';
 
@@ -27,6 +28,7 @@ interface CollectionViewProps {
   deckUsage?: DeckUsage;
 }
 
+const LIMIT = 60;
 const emptyItems = [] as CollectionRow[];
 const emptyOptions = [] as { value: string; label: string }[];
 
@@ -39,7 +41,9 @@ export function CollectionView({
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const topRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -70,6 +74,11 @@ export function CollectionView({
     clearAll,
   } = useCollectionFilters();
 
+  // Any filter or search change should reset to the first page.
+  useEffect(() => {
+    setPage(1);
+  }, [q, color, type, set, sort, dir, favOnly, deckFilter]);
+
   const { data, isPending, isFetching } = useQuery<CollectionQueryResult>({
     queryKey: [
       'collection',
@@ -83,6 +92,7 @@ export function CollectionView({
         sortDir: dir,
         favOnly,
         deckFilter,
+        page,
       },
     ],
     queryFn: async () => {
@@ -93,8 +103,10 @@ export function CollectionView({
       if (set !== 'all') sp.set('set', set);
       sp.set('sortBy', sort);
       sp.set('sortDir', dir);
-      if (favOnly) sp.set('favOnly', '1');
+      if (favOnly) sp.set('favOnly', 'true');
       if (deckFilter !== 'any') sp.set('deckFilter', deckFilter);
+      sp.set('page', String(page));
+      sp.set('limit', String(LIMIT));
       const res = await fetch(`/api/collection?${sp}`);
       if (!res.ok) throw new Error('Failed to fetch collection');
       return res.json();
@@ -157,6 +169,7 @@ export function CollectionView({
   return (
     <>
       <form
+        ref={topRef}
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
@@ -193,6 +206,11 @@ export function CollectionView({
         setOptions={setOptions}
       />
       <CollectionChips
+        q={q}
+        onClearQ={() => {
+          setQ('');
+          if (inputRef.current) inputRef.current.value = '';
+        }}
         favOnly={favOnly}
         onClearFavOnly={() => setFavOnly(false)}
         color={color}
@@ -202,17 +220,19 @@ export function CollectionView({
         set={set}
         onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={clearAll}
+        onClearAll={() => {
+          clearAll();
+          setQ('');
+          if (inputRef.current) inputRef.current.value = '';
+        }}
       />
       <p className="mb-3 text-xs text-muted">
-        {q ? (
+        {total.toLocaleString()} card{total === 1 ? '' : 's'}
+        {q && <> matching &ldquo;{q}&rdquo;</>}
+        {Math.ceil(total / LIMIT) > 1 && (
           <>
-            {items.length} match{items.length === 1 ? '' : 'es'} for &ldquo;{q}
-            &rdquo;
-          </>
-        ) : (
-          <>
-            Showing {items.length.toLocaleString()} of {total.toLocaleString()}
+            {' '}
+            &middot; page {page} of {Math.ceil(total / LIMIT)}
           </>
         )}
       </p>
@@ -247,6 +267,13 @@ export function CollectionView({
             : 'No cards match these filters.'}
         </p>
       )}
+      <Pagination
+        page={page}
+        totalPages={Math.ceil(total / LIMIT)}
+        disabled={isFetching}
+        onPageChange={setPage}
+        scrollTargetRef={topRef}
+      />
       <CollectionLightbox
         visible={items}
         zoom={zoom}
