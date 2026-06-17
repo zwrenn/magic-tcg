@@ -6,6 +6,7 @@ import { normalizeName } from '../normalize';
 import { COLOR_BUCKETS, TYPE_BUCKETS } from '../card-types';
 import type { ColorBucket, TypeBucket } from '../card-types';
 
+/** Aggregate stats for a user's collection: distinct card count, total copies, and estimated value. */
 export async function collectionTotals(
   userId: number
 ): Promise<{ distinct: number; total: number; valueUsd: number }> {
@@ -13,6 +14,7 @@ export async function collectionTotals(
     .select({
       distinct: sql<number>`count(*)::int`,
       total: sql<number>`coalesce(sum(${schema.collectionItems.quantity}), 0)::int`,
+      // Foil copies use the foil price when available, falling back to the regular price.
       valueUsd: sql<number>`coalesce(sum(${schema.collectionItems.quantity} * coalesce(case when ${schema.collectionItems.foil} then ${schema.cards.priceUsdFoil} else ${schema.cards.pricesUsd} end, ${schema.cards.pricesUsd})), 0)::float`,
     })
     .from(schema.collectionItems)
@@ -25,7 +27,9 @@ export async function collectionTotals(
   };
 }
 
-// Module-level projection used for both the live query and type inference below.
+// Shared between the live query (.select) and the RawCollectionRow type below,
+// so the selected columns and their TypeScript types always stay in sync.
+// Some keys differ from the schema column names due to aliasing (e.g. imageUri → image).
 const COLLECTION_SELECT = {
   id: schema.collectionItems.id,
   name: schema.cards.name,
@@ -45,10 +49,7 @@ const COLLECTION_SELECT = {
   condition: schema.collectionItems.condition,
 };
 
-// Each field is typed against its source column in the schema-inferred Card /
-// CollectionItem types so changes to the schema propagate here automatically.
-// Keys match COLLECTION_SELECT (some differ from schema property names due to
-// aliasing, e.g. imageUri → image, pricesUsd → priceUsd).
+// Each field is typed against its source column so schema changes propagate automatically.
 type RawCollectionRow = {
   id: CollectionItem['id'];
   name: Card['name'];
@@ -74,6 +75,8 @@ export type CollectionRow = Omit<RawCollectionRow, 'cmc' | 'priceUsdFoil'> & {
   cmc: number | null;
 };
 
+// `as const` tuple is the single source of truth: SortKey and VALID_SORT_KEYS
+// are both derived from it so they can never drift apart.
 const SORT_KEYS = [
   'name',
   'cmc',
@@ -104,6 +107,7 @@ export type CollectionQueryResult = {
   sets: { value: string; label: string }[];
 };
 
+// Used by the API route to validate incoming query params against known values.
 export const VALID_COLORS: readonly (ColorBucket | 'all')[] = [
   'all',
   ...COLOR_BUCKETS,
@@ -114,6 +118,13 @@ export const VALID_TYPES: readonly (TypeBucket | 'all')[] = [
 ];
 export const VALID_SORT_KEYS: readonly SortKey[] = SORT_KEYS;
 
+/**
+ * Builds the ORDER BY clause for a given sort key.
+ * Color and type sorts use SQL CASE expressions to assign a numeric bucket order
+ * rather than sorting alphabetically on the raw string — this keeps the output
+ * consistent with the bucket ordering defined in card-types.ts.
+ * All sorts use name as a stable secondary key.
+ */
 function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
   const d = sortDir === 'desc' ? desc : asc;
   const nameAsc = asc(schema.cards.name);
@@ -123,12 +134,14 @@ function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
     case 'quantity':
       return [d(schema.collectionItems.quantity), nameAsc] as const;
     case 'price': {
+      // Cast to numeric so NULL sorts last rather than causing a type error.
       const priceExpr = sql<number>`coalesce(${schema.cards.pricesUsd}::numeric, 0)`;
       return [d(priceExpr), nameAsc] as const;
     }
     case 'set':
       return [d(schema.cards.setName), nameAsc] as const;
     case 'color': {
+      // WUBRG order, then multicolor, then colorless.
       const colorOrder = sql<number>`case
         when coalesce(${schema.cards.colorIdentity}, '') = 'W' then 0
         when coalesce(${schema.cards.colorIdentity}, '') = 'U' then 1
@@ -141,6 +154,7 @@ function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
       return [d(colorOrder), nameAsc] as const;
     }
     case 'type': {
+      // Priority order mirrors typeBucket() in card-types.ts.
       const typeOrder = sql<number>`case
         when lower(coalesce(${schema.cards.typeLine}, '')) like '%creature%' then 0
         when lower(coalesce(${schema.cards.typeLine}, '')) like '%planeswalker%' then 1
@@ -159,6 +173,15 @@ function buildOrderBy(sortBy: SortKey, sortDir: 'asc' | 'desc') {
   }
 }
 
+/**
+ * Query a single user's collection with optional server-side filtering, sorting, and pagination.
+ *
+ * Fires three queries in parallel:
+ *   1. Paginated result rows.
+ *   2. Total matching count (for pagination UI).
+ *   3. All distinct sets the user owns — intentionally ignores active filters so
+ *      the set dropdown always shows every option regardless of the current view.
+ */
 export async function searchUserCollection(
   userId: number,
   options: CollectionQueryOptions = {}
@@ -186,6 +209,8 @@ export async function searchUserCollection(
   }
 
   if (color !== 'all') {
+    // colorIdentity is stored as a comma-joined letter string (e.g. "W,U").
+    // Colorless cards have an empty string or NULL; multicolor cards contain a comma.
     switch (color) {
       case 'Colorless':
         conds.push(sql`coalesce(${schema.cards.colorIdentity}, '') = ''`);
@@ -208,6 +233,7 @@ export async function searchUserCollection(
   }
 
   if (type !== 'all') {
+    // CASE expression mirrors typeBucket() priority so filter results match the bucket labels.
     conds.push(sql`case
       when lower(coalesce(${schema.cards.typeLine}, '')) like '%creature%' then 'Creature'
       when lower(coalesce(${schema.cards.typeLine}, '')) like '%planeswalker%' then 'Planeswalker'
@@ -226,6 +252,8 @@ export async function searchUserCollection(
   }
 
   if (favOnly) {
+    // Correlated EXISTS against the favorites table — avoids a join that would
+    // multiply rows when a card is favorited multiple times.
     conds.push(sql`exists (
       select 1 from favorites
       where favorites.user_id = ${userId}
@@ -269,8 +297,7 @@ export async function searchUserCollection(
         eq(schema.cards.id, schema.collectionItems.cardId)
       )
       .where(where),
-    // sets are always computed from the full collection, ignoring active filters,
-    // so the dropdown always shows all available options regardless of current view.
+    // No active filters — always returns every set the user owns.
     db
       .selectDistinct({
         setCode: schema.cards.setCode,
@@ -285,6 +312,8 @@ export async function searchUserCollection(
       .orderBy(schema.cards.setName),
   ]);
 
+  // Drizzle returns Postgres numeric columns as strings; cast cmc here.
+  // Foil copies display the foil price when one exists, otherwise fall back to regular.
   const items = rows.map(({ priceUsdFoil, ...r }) => ({
     ...r,
     cmc: r.cmc != null ? Number(r.cmc) : null,

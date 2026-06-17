@@ -20,6 +20,7 @@ export type AdvancedFilters = {
   limit?: number;
 };
 
+// Extends GlobalSearchResult with card-detail fields that only advanced search returns.
 export type AdvancedResult = GlobalSearchResult & {
   typeLine: string | null;
   cmc: number | null;
@@ -31,6 +32,7 @@ export type AdvancedResult = GlobalSearchResult & {
 
 const WUBRG = ['W', 'U', 'B', 'R', 'G'] as const;
 
+/** Returns true when any filter beyond the default "show everything" state is active. */
 export function hasAdvancedFilters(f: AdvancedFilters): boolean {
   return Boolean(
     f.name ||
@@ -43,6 +45,17 @@ export function hasAdvancedFilters(f: AdvancedFilters): boolean {
   );
 }
 
+/**
+ * Scryfall-style search over the pod's combined collection.
+ *
+ * Like globalSearch, this is two-phase: first find candidate cards matching
+ * the filters (up to 600 to give the owner filter room), then fetch ownership
+ * for that set and apply the owner filter in JS — the owner constraint doesn't
+ * translate cleanly to a single SQL WHERE clause.
+ *
+ * The "everyone" owner option requires knowing how many players have collections,
+ * so a third query fetches the distinct user count from collection_items.
+ */
 export async function advancedSearch(
   f: AdvancedFilters
 ): Promise<AdvancedResult[]> {
@@ -55,6 +68,7 @@ export async function advancedSearch(
       conds.push(sql`${schema.cards.normalizedName} ILIKE ${'%' + n + '%'}`);
   }
   if (f.type) {
+    // Each word in the type string must appear somewhere in the type line.
     for (const word of f.type.trim().split(/\s+/).filter(Boolean)) {
       conds.push(sql`${schema.cards.typeLine} ILIKE ${'%' + word + '%'}`);
     }
@@ -68,6 +82,8 @@ export async function advancedSearch(
     else conds.push(sql`${schema.cards.cmc} = ${f.cmc}`);
   }
 
+  // colorIdentity is stored as a comma-joined letter string (e.g. "W,U,B").
+  // Colorless cards have an empty string or NULL.
   const ci = schema.cards.colorIdentity;
   if (f.colorless) {
     conds.push(sql`coalesce(${ci}, '') = ''`);
@@ -82,15 +98,17 @@ export async function advancedSearch(
     for (const c of WUBRG) {
       const has = sel.has(c);
       if (mode === 'including') {
+        // Card must contain each selected color; unselected colors are ignored.
         if (has) conds.push(sql`${ci} ILIKE ${'%' + c + '%'}`);
       } else if (mode === 'exact') {
+        // Card must contain selected colors and must NOT contain unselected ones.
         conds.push(
           has
             ? sql`${ci} ILIKE ${'%' + c + '%'}`
             : sql`${ci} NOT ILIKE ${'%' + c + '%'}`
         );
       } else {
-        // at most: selected colors optional, unselected forbidden
+        // "at most": selected colors are optional, but unselected colors are forbidden.
         if (!has)
           conds.push(sql`coalesce(${ci}, '') NOT ILIKE ${'%' + c + '%'}`);
       }
@@ -99,6 +117,8 @@ export async function advancedSearch(
 
   const where = conds.length ? and(...conds) : undefined;
 
+  // The inner join with collection_items ensures only owned cards are returned.
+  // selectDistinctOn deduplicates by name, preferring rows with a non-null image.
   const candidates = await db
     .selectDistinctOn([schema.cards.normalizedName], {
       normalizedName: schema.cards.normalizedName,
@@ -143,6 +163,8 @@ export async function advancedSearch(
     ownersByCard.set(row.normalizedName, list);
   }
 
+  // "everyone" means every player who has any collection — queried separately
+  // since it's a count of distinct users, not something the card query knows.
   const [{ n: playerCount } = { n: 0 }] = await db
     .select({
       n: sql<number>`count(distinct ${schema.collectionItems.userId})::int`,
@@ -154,7 +176,7 @@ export async function advancedSearch(
     if (o === 'anyone') return owners.length > 0;
     if (o === 'everyone') return owners.length >= Math.max(1, playerCount);
     if (o === '2' || o === '3') return owners.length >= Number(o);
-    return owners.some((x) => x.name === o);
+    return owners.some((x) => x.name === o); // specific named member
   };
 
   const results: AdvancedResult[] = candidates
@@ -163,7 +185,7 @@ export async function advancedSearch(
       name: c.name,
       image: c.image,
       typeLine: c.typeLine,
-      cmc: c.cmc != null ? Number(c.cmc) : null,
+      cmc: c.cmc != null ? Number(c.cmc) : null, // Postgres numeric → string → number
       colorIdentity: c.colorIdentity,
       rarity: c.rarity,
       setCode: c.setCode,

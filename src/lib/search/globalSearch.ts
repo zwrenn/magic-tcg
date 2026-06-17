@@ -12,8 +12,16 @@ export type GlobalSearchResult = {
 };
 
 /**
- * "Does anyone have a Smothering Tithe?" — fuzzy name search across ALL
- * collections, returning each matching card with who owns it. Trigram-backed.
+ * "Does anyone have a Smothering Tithe?" — searches across all collections
+ * and returns each matching card with the list of pod members who own it.
+ *
+ * Two-phase approach:
+ *   1. Find candidate cards by name (ILIKE, no ownership constraint).
+ *   2. Fetch ownership for just those cards, then merge.
+ * This avoids a large GROUP BY over the whole collection table on every keystroke.
+ *
+ * Candidates are fetched at 3× the limit so the JS-side relevance re-ranking
+ * has enough material to work with before trimming to the final limit.
  */
 export async function globalSearch(
   q: string,
@@ -22,6 +30,8 @@ export async function globalSearch(
   const qNorm = normalizeName(q);
   if (!qNorm) return [];
 
+  // selectDistinctOn deduplicates by normalizedName, keeping the row whose
+  // imageUri is non-null (nulls sort last via the secondary ORDER BY expression).
   const candidates = await db
     .selectDistinctOn([schema.cards.normalizedName], {
       normalizedName: schema.cards.normalizedName,
@@ -33,6 +43,7 @@ export async function globalSearch(
     .orderBy(schema.cards.normalizedName, sql`${schema.cards.imageUri} is null`)
     .limit(limit * 3);
 
+  // Re-rank in JS: exact match → prefix match → substring match, then alphabetical.
   const ranked = candidates
     .map((c) => ({
       ...c,
@@ -49,6 +60,7 @@ export async function globalSearch(
   if (ranked.length === 0) return [];
   const names = ranked.map((c) => c.normalizedName);
 
+  // Fetch ownership for only the ranked cards, grouped by card + user.
   const ownership = await db
     .select({
       normalizedName: schema.cards.normalizedName,
@@ -73,6 +85,7 @@ export async function globalSearch(
     normalizedName: c.normalizedName,
     name: c.name,
     image: c.image,
+    // Sort owners by quantity descending so the biggest holder appears first.
     owners: (ownersByCard.get(c.normalizedName) ?? []).sort(
       (a, b) => b.qty - a.qty
     ),
