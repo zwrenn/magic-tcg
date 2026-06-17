@@ -1,4 +1,4 @@
-import { searchUserCollection } from '@/lib/search';
+import { searchUserCollection } from '@/lib/search/collection';
 import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
 import { CollectionView } from './CollectionView';

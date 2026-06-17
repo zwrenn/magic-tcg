@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow } from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
 import { CollectionFiltersBar } from './CollectionFiltersBar';

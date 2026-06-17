@@ -1,6 +1,6 @@
 'use client';
 
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow } from '@/lib/search/collection';
 import type { DeckUsage } from '../useCollectionFilters';
 import { GridCard } from './GridCard';
 import { gridListRowClass } from '../constants';

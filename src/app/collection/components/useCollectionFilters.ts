@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CollectionRow, SortKey } from '@/lib/search';
+import type { CollectionRow, SortKey } from '@/lib/search/collection';
 import {
   COLOR_BUCKETS,
   TYPE_BUCKETS,

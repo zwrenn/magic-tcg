@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser, getUserByName } from '@/lib/auth';
-import { collectionTotals, searchUserCollection } from '@/lib/search';
+import {
+  collectionTotals,
+  searchUserCollection,
+} from '@/lib/search/collection';
 import {
   COLOR_BUCKETS,
   TYPE_BUCKETS,

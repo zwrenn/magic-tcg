@@ -1,7 +1,7 @@
 import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
-import { collectionTotals, searchUserCollection } from './search';
+import { collectionTotals, searchUserCollection } from './search/collection';
 import type { TrophyShape, TrophyTier } from '@/components/pixel-trophy';
 
 export type Trophy = {

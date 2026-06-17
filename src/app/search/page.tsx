@@ -1,21 +1,21 @@
-import { requireUser } from "@/lib/auth";
+import { requireUser } from '@/lib/auth';
+import { globalSearch } from '@/lib/search/globalSearch';
 import {
-  globalSearch,
   advancedSearch,
   hasAdvancedFilters,
   type AdvancedFilters,
-  type GlobalSearchResult,
   type AdvancedResult,
-} from "@/lib/search";
-import { getFavorites } from "@/lib/favorites";
-import { getDeckUsage } from "@/lib/decks";
-import { getPendingOutgoingKeys } from "@/lib/requests";
-import { POD_MEMBERS } from "@/lib/pod";
-import { SearchHotkey } from "@/components/search-hotkey";
-import { SearchResults, type SearchResultItem } from "./search-results";
+} from '@/lib/search/advancedSearch';
+import type { GlobalSearchResult } from '@/lib/search/globalSearch';
+import { getFavorites } from '@/lib/favorites';
+import { getDeckUsage } from '@/lib/decks';
+import { getPendingOutgoingKeys } from '@/lib/requests';
+import { POD_MEMBERS } from '@/lib/pod';
+import { SearchHotkey } from '@/components/search-hotkey';
+import { SearchResults, type SearchResultItem } from './search-results';
 
 function ownerDecksMap(
-  decks: { owner: string; id: number; name: string }[],
+  decks: { owner: string; id: number; name: string }[]
 ): Record<string, { id: number; name: string }[]> {
   const m: Record<string, { id: number; name: string }[]> = {};
   for (const d of decks) (m[d.owner] ??= []).push({ id: d.id, name: d.name });
@@ -23,7 +23,8 @@ function ownerDecksMap(
 }
 
 type SP = Record<string, string | string[] | undefined>;
-const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+const one = (v: string | string[] | undefined) =>
+  (Array.isArray(v) ? v[0] : v) ?? '';
 
 export default async function SearchPage({
   searchParams,
@@ -33,21 +34,26 @@ export default async function SearchPage({
   const viewer = await requireUser();
   const sp = await searchParams;
 
-  const isAdvanced = one(sp.adv) === "1";
+  const isAdvanced = one(sp.adv) === '1';
 
   // Advanced filter parsing.
-  const colorArr = Array.isArray(sp.color) ? sp.color : sp.color ? [sp.color] : [];
+  const colorArr = Array.isArray(sp.color)
+    ? sp.color
+    : sp.color
+      ? [sp.color]
+      : [];
   const filters: AdvancedFilters = {
     name: one(sp.q),
     type: one(sp.type),
-    colors: colorArr.join(""),
-    colorMode: (one(sp.colormode) || "including") as AdvancedFilters["colorMode"],
-    colorless: one(sp.colorless) === "1",
+    colors: colorArr.join(''),
+    colorMode: (one(sp.colormode) ||
+      'including') as AdvancedFilters['colorMode'],
+    colorless: one(sp.colorless) === '1',
     rarity: one(sp.rarity),
     cmc: one(sp.cmc) ? Number(one(sp.cmc)) : undefined,
-    cmcOp: (one(sp.cmcop) || "eq") as AdvancedFilters["cmcOp"],
-    owner: one(sp.owner) || "anyone",
-    sort: (one(sp.sort) || "name") as AdvancedFilters["sort"],
+    cmcOp: (one(sp.cmcop) || 'eq') as AdvancedFilters['cmcOp'],
+    owner: one(sp.owner) || 'anyone',
+    sort: (one(sp.sort) || 'name') as AdvancedFilters['sort'],
   };
 
   const q = one(sp.q);
@@ -71,7 +77,7 @@ export default async function SearchPage({
 
   // Shape results for the client list (which owns the ←/→ zoom navigation).
   const items: SearchResultItem[] = results.map((r) => {
-    const adv = "typeLine" in r ? (r as AdvancedResult) : null;
+    const adv = 'typeLine' in r ? (r as AdvancedResult) : null;
     return {
       normalizedName: r.normalizedName,
       name: r.name,
@@ -97,16 +103,16 @@ export default async function SearchPage({
       <SearchHotkey />
       <h1 className="t-hero text-2xl">Who has it?</h1>
       <p className="mt-1 text-sm text-muted">
-        Search every collection in the pod at once. Tip: press{" "}
-        <kbd className="rounded border border-border bg-surface-2 px-1">/</kbd> to
-        focus search.
+        Search every collection in the pod at once. Tip: press{' '}
+        <kbd className="rounded border border-border bg-surface-2 px-1">/</kbd>{' '}
+        to focus search.
       </p>
 
       {/* Simple name search */}
       <form className="mt-5 flex gap-2">
         <input
           name="q"
-          defaultValue={isAdvanced ? "" : q}
+          defaultValue={isAdvanced ? '' : q}
           autoFocus
           placeholder="e.g. Smothering Tithe"
           className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
@@ -116,14 +122,19 @@ export default async function SearchPage({
 
       {/* Advanced search */}
       <details open={isAdvanced} className="module mt-3 overflow-hidden">
-        <summary className="cursor-pointer select-none px-4 py-2.5 font-semibold text-[var(--purple-deep)]">
+        <summary className="cursor-pointer px-4 py-2.5 font-semibold text-[var(--purple-deep)] select-none">
           ⚙ Advanced search
         </summary>
         <form className="space-y-3 border-t border-border p-4">
           <input type="hidden" name="adv" value="1" />
 
           <Field label="Card name">
-            <input name="q" defaultValue={isAdvanced ? q : ""} placeholder="part of a name" className="input" />
+            <input
+              name="q"
+              defaultValue={isAdvanced ? q : ''}
+              placeholder="part of a name"
+              className="input"
+            />
           </Field>
 
           <Field label="Type line">
@@ -138,20 +149,43 @@ export default async function SearchPage({
           <Field label="Color identity">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex gap-2">
-                {(["W", "U", "B", "R", "G"] as const).map((c) => (
-                  <label key={c} className="flex cursor-pointer items-center gap-1 text-sm">
-                    <input type="checkbox" name="color" value={c} defaultChecked={colorArr.includes(c)} className="accent-[var(--purple)]" />
-                    <i className={`ms ms-${c.toLowerCase()} ms-cost`} aria-hidden /> {c}
+                {(['W', 'U', 'B', 'R', 'G'] as const).map((c) => (
+                  <label
+                    key={c}
+                    className="flex cursor-pointer items-center gap-1 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      name="color"
+                      value={c}
+                      defaultChecked={colorArr.includes(c)}
+                      className="accent-[var(--purple)]"
+                    />
+                    <i
+                      className={`ms ms-${c.toLowerCase()} ms-cost`}
+                      aria-hidden
+                    />{' '}
+                    {c}
                   </label>
                 ))}
               </div>
-              <select name="colormode" defaultValue={filters.colorMode} className="rounded-lg border border-border bg-surface px-2 py-1 text-sm">
+              <select
+                name="colormode"
+                defaultValue={filters.colorMode}
+                className="rounded-lg border border-border bg-surface px-2 py-1 text-sm"
+              >
                 <option value="including">including these</option>
                 <option value="exact">exactly these</option>
                 <option value="atmost">at most these</option>
               </select>
               <label className="flex cursor-pointer items-center gap-1.5 text-sm">
-                <input type="checkbox" name="colorless" value="1" defaultChecked={filters.colorless} className="accent-[var(--purple)]" />
+                <input
+                  type="checkbox"
+                  name="colorless"
+                  value="1"
+                  defaultChecked={filters.colorless}
+                  className="accent-[var(--purple)]"
+                />
                 Colorless only
               </label>
             </div>
@@ -159,7 +193,11 @@ export default async function SearchPage({
 
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Rarity">
-              <select name="rarity" defaultValue={filters.rarity} className="input">
+              <select
+                name="rarity"
+                defaultValue={filters.rarity}
+                className="input"
+              >
                 <option value="">Any</option>
                 <option value="common">Common</option>
                 <option value="uncommon">Uncommon</option>
@@ -169,22 +207,39 @@ export default async function SearchPage({
             </Field>
             <Field label="Mana value">
               <div className="flex gap-1.5">
-                <select name="cmcop" defaultValue={filters.cmcOp} className="input !w-auto">
+                <select
+                  name="cmcop"
+                  defaultValue={filters.cmcOp}
+                  className="input !w-auto"
+                >
                   <option value="eq">=</option>
                   <option value="lte">≤</option>
                   <option value="gte">≥</option>
                 </select>
-                <input name="cmc" type="number" min="0" defaultValue={filters.cmc ?? ""} placeholder="any" className="input" />
+                <input
+                  name="cmc"
+                  type="number"
+                  min="0"
+                  defaultValue={filters.cmc ?? ''}
+                  placeholder="any"
+                  className="input"
+                />
               </div>
             </Field>
             <Field label="Owned by">
-              <select name="owner" defaultValue={filters.owner} className="input">
+              <select
+                name="owner"
+                defaultValue={filters.owner}
+                className="input"
+              >
                 <option value="anyone">Anyone</option>
                 <option value="everyone">Everyone in the pod</option>
                 <option value="2">At least 2 of us</option>
                 <option value="3">At least 3 of us</option>
                 {POD_MEMBERS.map((m) => (
-                  <option key={m} value={m}>{m === viewer.name ? "Me" : m}</option>
+                  <option key={m} value={m}>
+                    {m === viewer.name ? 'Me' : m}
+                  </option>
                 ))}
               </select>
             </Field>
@@ -192,29 +247,35 @@ export default async function SearchPage({
 
           <div className="flex items-center gap-3">
             <Field label="Sort">
-              <select name="sort" defaultValue={filters.sort} className="input !w-auto">
+              <select
+                name="sort"
+                defaultValue={filters.sort}
+                className="input !w-auto"
+              >
                 <option value="name">Name</option>
                 <option value="cmc">Mana value</option>
                 <option value="price">Price</option>
               </select>
             </Field>
-            <button className="gel gel-purple mt-5">⚙ Run advanced search</button>
+            <button className="gel gel-purple mt-5">
+              ⚙ Run advanced search
+            </button>
           </div>
         </form>
       </details>
 
       {ran && results.length === 0 && (
         <p className="mt-8 text-sm text-muted">
-          Nothing in the pod matches{isAdvanced ? " those filters" : ` “${q}”`}.
+          Nothing in the pod matches{isAdvanced ? ' those filters' : ` “${q}”`}.
         </p>
       )}
 
       {results.length > 0 && (
         <>
           <p className="mt-6 text-xs text-muted">
-            {results.length} card{results.length === 1 ? "" : "s"}
-            {isAdvanced && results.length >= 80 ? " (showing first 80)" : ""}
-            {" · "}click a card, then use ← → to browse
+            {results.length} card{results.length === 1 ? '' : 's'}
+            {isAdvanced && results.length >= 80 ? ' (showing first 80)' : ''}
+            {' · '}click a card, then use ← → to browse
           </p>
           <SearchResults items={items} viewerName={viewer.name} />
         </>
@@ -223,7 +284,13 @@ export default async function SearchPage({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="t-label mb-1 block">{label}</span>

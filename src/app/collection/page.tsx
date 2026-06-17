@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { requireUser } from '@/lib/auth';
-import { collectionTotals } from '@/lib/search';
+import { collectionTotals } from '@/lib/search/collection';
 import { CollectionViewLoader } from './components/CollectionViewLoader';
 import { AddCardPanel } from './components/AddCardPanel';
 import { ClearCollectionButton } from './components/ClearCollectionButton';

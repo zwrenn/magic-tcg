@@ -1,6 +1,6 @@
 'use client';
 
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow } from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { FavoriteStar } from '@/components/FavoriteStar';
 import { ManaCost, ColorDots } from '@/components/mana';

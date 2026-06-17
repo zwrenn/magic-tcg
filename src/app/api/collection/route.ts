@@ -4,8 +4,8 @@ import {
   VALID_COLORS,
   VALID_SORT_KEYS,
   VALID_TYPES,
-} from '@/lib/search';
-import type { CollectionQueryOptions } from '@/lib/search';
+} from '@/lib/search/collection';
+import type { CollectionQueryOptions } from '@/lib/search/collection';
 
 const DEFAULT_LIMIT = 60;
 const MAX_LIMIT = 200;

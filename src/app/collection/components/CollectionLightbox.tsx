@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow } from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { FavoriteStar } from '@/components/FavoriteStar';
 
