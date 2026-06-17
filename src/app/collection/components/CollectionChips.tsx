@@ -9,6 +9,8 @@ interface SelectOption {
 }
 
 interface CollectionChipsProps {
+  q: string;
+  onClearQ: () => void;
   favOnly: boolean;
   onClearFavOnly: () => void;
   color: ColorBucket | 'all';
@@ -22,6 +24,8 @@ interface CollectionChipsProps {
 }
 
 export function CollectionChips({
+  q,
+  onClearQ,
   favOnly,
   onClearFavOnly,
   color,
@@ -34,11 +38,12 @@ export function CollectionChips({
   onClearAll,
 }: CollectionChipsProps) {
   const hasActiveFilter =
-    favOnly || color !== 'all' || type !== 'all' || set !== 'all';
+    !!q || favOnly || color !== 'all' || type !== 'all' || set !== 'all';
   if (!hasActiveFilter) return null;
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+      {q && <Chip label={`"${q}"`} onClear={onClearQ} />}
       {favOnly && <Chip label="★ Favorites" onClear={onClearFavOnly} />}
       {color !== 'all' && <Chip label={color} onClear={onClearColor} />}
       {type !== 'all' && <Chip label={type} onClear={onClearType} />}

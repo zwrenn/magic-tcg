@@ -1,6 +1,6 @@
 'use client';
 
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow } from '@/lib/search/collection';
 import { FavoriteStar } from '@/components/FavoriteStar';
 import { SetSymbol } from '@/components/set-symbol';
 

@@ -1,7 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import type { CollectionRow } from '@/lib/search';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
+import type {
+  CollectionQueryResult,
+  CollectionRow,
+} from '@/lib/search/collection';
 import type { DeckUsage } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
 import { CollectionFiltersBar } from './CollectionFiltersBar';
@@ -9,42 +17,108 @@ import { CollectionChips } from './CollectionChips';
 import { CollectionGrid } from './CollectionGrid';
 import { CollectionList } from './CollectionList';
 import { CollectionLightbox } from './CollectionLightbox';
+import { gridListRowClass } from './constants';
+import { Pagination } from '@/components/Pagination';
 
 type ViewMode = 'grid' | 'list';
 
 interface CollectionViewProps {
-  rows: CollectionRow[];
-  total: number;
-  limit: number;
-  query: string;
+  userId: number;
   favorites: string[];
   deckUsage?: DeckUsage;
 }
 
+const LIMIT = 60;
+const emptyItems = [] as CollectionRow[];
+const emptyOptions = [] as { value: string; label: string }[];
+
 export function CollectionView({
-  rows,
-  total,
-  limit,
-  query,
+  userId,
   favorites,
   deckUsage = {},
 }: CollectionViewProps) {
   const [view, setView] = useState<ViewMode>('grid');
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
-  const [items, setItems] = useState<CollectionRow[]>(rows);
-
-  useEffect(() => setItems(rows), [rows]);
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const topRef = useRef<HTMLFormElement>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const saved = localStorage.getItem('pod_collection_view');
-    if (saved === 'grid' || saved === 'list') setView(saved);
+    if (saved === 'grid' || saved === 'list') setView(saved as ViewMode);
   }, []);
 
   function pickView(v: ViewMode) {
     setView(v);
     localStorage.setItem('pod_collection_view', v);
   }
+
+  const {
+    color,
+    setColor,
+    type,
+    setType,
+    set,
+    setSet,
+    sort,
+    setSort,
+    dir,
+    setDir,
+    favOnly,
+    setFavOnly,
+    deckFilter,
+    setDeckFilter,
+    clearAll,
+  } = useCollectionFilters();
+
+  // Any filter or search change should reset to the first page.
+  useEffect(() => {
+    setPage(1);
+  }, [q, color, type, set, sort, dir, favOnly, deckFilter]);
+
+  const { data, isPending, isFetching } = useQuery<CollectionQueryResult>({
+    queryKey: [
+      'collection',
+      userId,
+      {
+        q,
+        color,
+        type,
+        set,
+        sortBy: sort,
+        sortDir: dir,
+        favOnly,
+        deckFilter,
+        page,
+      },
+    ],
+    queryFn: async () => {
+      const sp = new URLSearchParams();
+      if (q) sp.set('q', q);
+      if (color !== 'all') sp.set('color', color);
+      if (type !== 'all') sp.set('type', type);
+      if (set !== 'all') sp.set('set', set);
+      sp.set('sortBy', sort);
+      sp.set('sortDir', dir);
+      if (favOnly) sp.set('favOnly', 'true');
+      if (deckFilter !== 'any') sp.set('deckFilter', deckFilter);
+      sp.set('page', String(page));
+      sp.set('limit', String(LIMIT));
+      const res = await fetch(`/api/collection?${sp}`);
+      if (!res.ok) throw new Error('Failed to fetch collection');
+      return res.json();
+    },
+    // Keep the previous page's data visible while a new fetch is in-flight so
+    // the grid doesn't flash empty on every filter change.
+    placeholderData: keepPreviousData,
+  });
+
+  const items = data?.items ?? emptyItems;
+  const setOptions = data?.sets ?? emptyOptions;
+  const total = data?.total ?? 0;
 
   function onFavChange(normalized: string, favorited: boolean) {
     setFavs((prev) => {
@@ -56,11 +130,6 @@ export function CollectionView({
   }
 
   async function changeQty(itemId: number, quantity: number) {
-    setItems((prev) =>
-      quantity <= 0
-        ? prev.filter((r) => r.id !== itemId)
-        : prev.map((r) => (r.id === itemId ? { ...r, quantity } : r))
-    );
     if (quantity <= 0) setZoom(null);
     try {
       await fetch('/api/collection/item', {
@@ -68,44 +137,61 @@ export function CollectionView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: itemId, quantity }),
       });
+      queryClient.invalidateQueries({ queryKey: ['collection', userId] });
     } catch {
-      /* optimistic; a refresh will reconcile */
+      /* best-effort; a manual refresh will reconcile */
     }
   }
 
-  const {
-    visible,
-    setOptions,
-    color,
-    type,
-    set,
-    sort,
-    dir,
-    favOnly,
-    deckFilter,
-    setColor,
-    setType,
-    setSet,
-    setSort,
-    setDir,
-    setDeckFilter,
-    setFavOnly,
-    clearAll,
-  } = useCollectionFilters(items, deckUsage, favs);
+  const itemCount = items.length;
+
+  // Close the lightbox if a refetch shrinks the list past the current zoom index.
+  useEffect(() => {
+    setZoom((z) => (z !== null && z >= itemCount ? null : z));
+  }, [itemCount]);
 
   const close = useCallback(() => setZoom(null), []);
   const step = useCallback(
     (delta: number) =>
       setZoom((z) =>
-        z === null ? z : Math.min(visible.length - 1, Math.max(0, z + delta))
+        z === null ? z : Math.min(itemCount - 1, Math.max(0, z + delta))
       ),
-    [visible.length]
+    [itemCount]
   );
 
-  const truncated = items.length >= limit && total > items.length;
+  if (isPending) {
+    return (
+      <ul className={`grid gap-3 ${gridListRowClass}`}>
+        {Array.from({ length: 24 }).map((_, i) => (
+          <li
+            key={i}
+            className="aspect-[488/680] animate-pulse rounded-lg bg-surface-2"
+          />
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <>
+      <form
+        ref={topRef}
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQ(inputRef.current?.value ?? '');
+        }}
+        className="mb-4"
+      >
+        <input
+          ref={inputRef}
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Search your cards by name…  (press / )"
+          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-accent"
+        />
+      </form>
       <CollectionFiltersBar
         color={color}
         onColorChange={setColor}
@@ -126,6 +212,11 @@ export function CollectionView({
         setOptions={setOptions}
       />
       <CollectionChips
+        q={q}
+        onClearQ={() => {
+          setQ('');
+          if (inputRef.current) inputRef.current.value = '';
+        }}
         favOnly={favOnly}
         onClearFavOnly={() => setFavOnly(false)}
         color={color}
@@ -135,50 +226,62 @@ export function CollectionView({
         set={set}
         onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={clearAll}
+        onClearAll={() => {
+          clearAll();
+          setQ('');
+          if (inputRef.current) inputRef.current.value = '';
+        }}
       />
-      {/* START - Showing Count - START */}
       <p className="mb-3 text-xs text-muted">
-        {query ? (
+        {total.toLocaleString()} card{total === 1 ? '' : 's'}
+        {q && <> matching &ldquo;{q}&rdquo;</>}
+        {Math.ceil(total / LIMIT) > 1 && (
           <>
-            {visible.length} match{visible.length === 1 ? '' : 'es'} for &ldquo;
-            {query}&rdquo;
-          </>
-        ) : (
-          <>
-            Showing {visible.length.toLocaleString()} of{' '}
-            {total.toLocaleString()}
-            {truncated && ' — search to narrow further'}
+            {' '}
+            &middot; page {page} of {Math.ceil(total / LIMIT)}
           </>
         )}
       </p>
-      {/* END - Showing Count - END */}
-      {view === 'grid' ? (
-        <CollectionGrid
-          items={visible}
-          favs={favs}
-          deckUsage={deckUsage}
-          onFavChange={onFavChange}
-          onZoom={setZoom}
-        />
-      ) : (
-        <CollectionList
-          items={visible}
-          favs={favs}
-          deckUsage={deckUsage}
-          onFavChange={onFavChange}
-          onZoom={setZoom}
-        />
-      )}
-      {visible.length === 0 && (
+      {/* Dim the grid while a background refetch is in progress. */}
+      <div
+        className={
+          isFetching ? 'opacity-60 transition-opacity duration-150' : ''
+        }
+      >
+        {view === 'grid' ? (
+          <CollectionGrid
+            items={items}
+            favs={favs}
+            deckUsage={deckUsage}
+            onFavChange={onFavChange}
+            onZoom={setZoom}
+          />
+        ) : (
+          <CollectionList
+            items={items}
+            favs={favs}
+            deckUsage={deckUsage}
+            onFavChange={onFavChange}
+            onZoom={setZoom}
+          />
+        )}
+      </div>
+      {items.length === 0 && (
         <p className="mt-8 text-sm text-muted">
           {favOnly
             ? 'No favorites match these filters yet — tap ☆ on a card to add one.'
             : 'No cards match these filters.'}
         </p>
       )}
+      <Pagination
+        page={page}
+        totalPages={Math.ceil(total / LIMIT)}
+        disabled={isFetching}
+        onPageChange={setPage}
+        scrollTargetRef={topRef}
+      />
       <CollectionLightbox
-        visible={visible}
+        visible={items}
         zoom={zoom}
         favs={favs}
         deckUsage={deckUsage}
