@@ -30,6 +30,7 @@ export function Pagination({
   return (
     <div className="mt-6 flex items-center justify-center gap-4 text-sm">
       <button
+        type="button"
         onClick={() => go(page - 1)}
         disabled={page === 1 || disabled}
         className="cursor-pointer rounded px-3 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
@@ -40,6 +41,7 @@ export function Pagination({
         {page} / {totalPages}
       </span>
       <button
+        type="button"
         onClick={() => go(page + 1)}
         disabled={page >= totalPages || disabled}
         className="cursor-pointer rounded px-3 py-1 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
