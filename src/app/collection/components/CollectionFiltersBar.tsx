@@ -8,7 +8,7 @@ import {
   type ColorBucket,
   type TypeBucket,
 } from '@/lib/card-types';
-import type { SortKey } from './useCollectionFilters';
+import type { SortKey } from '@/lib/search';
 
 type ViewMode = 'grid' | 'list';
 

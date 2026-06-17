@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CollectionRow } from '@/lib/search';
+import type { CollectionRow, SortKey } from '@/lib/search';
 import {
   COLOR_BUCKETS,
   TYPE_BUCKETS,
@@ -8,15 +8,6 @@ import {
   type ColorBucket,
   type TypeBucket,
 } from '@/lib/card-types';
-
-export type SortKey =
-  | 'name'
-  | 'cmc'
-  | 'color'
-  | 'type'
-  | 'quantity'
-  | 'price'
-  | 'set';
 export type DeckUsage = Record<
   string,
   { id: number; name: string; owner?: string }[]

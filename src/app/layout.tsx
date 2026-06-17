@@ -1,47 +1,49 @@
-import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { Nunito, Fredoka, IBM_Plex_Mono, VT323 } from "next/font/google";
-import { SiteChrome } from "@/components/site-chrome";
-import { Footer } from "@/components/footer";
-import { CardZoomProvider } from "@/components/card-zoom";
-import { CursorSparkles } from "@/components/cursor-sparkles";
-import { MusicPlayer } from "@/components/music-player";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { Nunito, Fredoka, IBM_Plex_Mono, VT323 } from 'next/font/google';
+import { SiteChrome } from '@/components/site-chrome';
+import { Footer } from '@/components/footer';
+import { CardZoomProvider } from '@/components/card-zoom';
+import { CursorSparkles } from '@/components/cursor-sparkles';
+import { MusicPlayer } from '@/components/music-player';
+import { QueryProvider } from '@/components/QueryProvider';
+import './globals.css';
 
 // Nunito body · Fredoka bubbly headings · VT323 pixel counters.
 const nunito = Nunito({
-  variable: "--font-body",
-  subsets: ["latin"],
-  display: "swap",
+  variable: '--font-body',
+  subsets: ['latin'],
+  display: 'swap',
 });
 const fredoka = Fredoka({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
+  variable: '--font-display',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 const plexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 const vt323 = VT323({
-  variable: "--font-pixel",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
+  variable: '--font-pixel',
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "The Pod",
-  description: "Ye olde shared commander collection — what does the pod already own?",
+  title: 'The Pod',
+  description:
+    'Ye olde shared commander collection — what does the pod already own?',
 };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const theme = (await cookies()).get("pod_theme")?.value ?? "candy";
+  const theme = (await cookies()).get('pod_theme')?.value ?? 'candy';
   return (
     <html
       lang="en"
@@ -58,14 +60,16 @@ export default async function RootLayout({
           href="https://cdn.jsdelivr.net/npm/keyrune@latest/css/keyrune.min.css"
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
         <CursorSparkles />
         <MusicPlayer />
-        <CardZoomProvider>
-          <SiteChrome />
-          {children}
-          <Footer />
-        </CardZoomProvider>
+        <QueryProvider>
+          <CardZoomProvider>
+            <SiteChrome />
+            {children}
+            <Footer />
+          </CardZoomProvider>
+        </QueryProvider>
       </body>
     </html>
   );

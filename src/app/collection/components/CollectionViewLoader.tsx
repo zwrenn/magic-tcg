@@ -3,9 +3,8 @@ import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
 import { CollectionView } from './CollectionView';
 
-// High cap so color/type/set filtering works across the whole collection
-// (client-side). Covers any realistic personal collection.
-export const COLLECTION_LIMIT = 5000;
+// Temporary high cap until the collection page is migrated to the paginated API.
+const COLLECTION_LIMIT = 5000;
 
 interface CollectionViewLoaderProps {
   userId: number;
@@ -18,8 +17,8 @@ export async function CollectionViewLoader({
   q,
   total,
 }: CollectionViewLoaderProps) {
-  const [rows, favorites, deckUsage] = await Promise.all([
-    searchUserCollection(userId, q, COLLECTION_LIMIT),
+  const [{ items: rows }, favorites, deckUsage] = await Promise.all([
+    searchUserCollection(userId, { q, limit: COLLECTION_LIMIT }),
     getFavorites(userId),
     getDeckUsage(),
   ]);

@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import tanstack from '@tanstack/eslint-plugin-query';
 
 export default defineConfig([
   ...nextVitals,
@@ -22,6 +23,7 @@ export default defineConfig([
     'next-env.d.ts',
   ]),
   eslintConfigPrettier,
+  ...tanstack.configs['flat/recommended'],
   {
     settings: {
       // Fix for ESLint 10+: eslint-plugin-react uses context.getFilename() (legacy API)
