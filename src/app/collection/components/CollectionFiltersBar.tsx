@@ -15,7 +15,7 @@ interface CollectionFiltersBarProps {
   sort: SortKey;
   onSortChange: (v: SortKey) => void;
   dir: 'asc' | 'desc';
-  onDirToggle: () => void;
+  onDirChange: (v: 'asc' | 'desc') => void;
   deckFilter: 'any' | 'in' | 'out';
   onDeckFilterChange: (v: 'any' | 'in' | 'out') => void;
   favOnly: boolean;
@@ -31,7 +31,7 @@ export function CollectionFiltersBar({
   sort,
   onSortChange,
   dir,
-  onDirToggle,
+  onDirChange,
   deckFilter,
   onDeckFilterChange,
   favOnly,
@@ -84,13 +84,14 @@ export function CollectionFiltersBar({
           { value: 'price', label: 'Price' },
         ]}
       />
-      <button
-        onClick={onDirToggle}
-        title={dir === 'asc' ? 'Ascending' : 'Descending'}
-        className="rounded-lg border border-border bg-surface px-2 py-1 text-foreground hover:border-accent/60"
-      >
-        {dir === 'asc' ? '↑' : '↓'}
-      </button>
+      <div className="flex gap-1 rounded-lg bg-surface-2 p-1 text-xs">
+        <Toggle active={dir === 'asc'} onClick={() => onDirChange('asc')}>
+          ↑ Asc
+        </Toggle>
+        <Toggle active={dir === 'desc'} onClick={() => onDirChange('desc')}>
+          ↓ Desc
+        </Toggle>
+      </div>
       <div className="ml-auto flex gap-1 rounded-lg bg-surface-2 p-1 text-xs">
         <Toggle active={view === 'grid'} onClick={() => onViewChange('grid')}>
           Grid

@@ -5,14 +5,17 @@ import {
   type AdvancedFilters,
   type AdvancedResult,
 } from '@/lib/search/advancedSearch';
-import type { GlobalSearchResult } from '@/lib/search/globalSearch';
 import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
 import { getPendingOutgoingKeys } from '@/lib/requests';
 import { parseQuery } from '@/lib/search/queryParser';
+import { POD_MEMBERS } from '@/lib/pod';
 import { SearchHotkey } from '@/components/search-hotkey';
+import { Pagination } from '@/components/Pagination';
 import { SearchResults, type SearchResultItem } from './search-results';
 import { SearchPanel } from './SearchPanel';
+
+const LIMIT = 40;
 
 function ownerDecksMap(
   decks: { owner: string; id: number; name: string }[]
@@ -35,6 +38,11 @@ export default async function SearchPage({
   const sp = await searchParams;
 
   const rawQuery = one(sp.q);
+  const defaultSort = one(sp.sort) || 'name';
+  const defaultDir = (one(sp.dir) || 'asc') as 'asc' | 'desc';
+  const defaultOwner = one(sp.owner) || 'anyone';
+  const page = Math.max(1, parseInt(one(sp.page) || '1', 10) || 1);
+
   const parsed = parseQuery(rawQuery);
 
   const filters: AdvancedFilters = {
@@ -46,8 +54,11 @@ export default async function SearchPage({
     rarity: parsed.rarity || undefined,
     cmc: parsed.cmc ? Number(parsed.cmc) : undefined,
     cmcOp: parsed.cmcOp,
-    owner: parsed.owner || 'anyone',
-    sort: (parsed.sort || 'name') as AdvancedFilters['sort'],
+    owner: defaultOwner,
+    sort: defaultSort as AdvancedFilters['sort'],
+    sortDir: defaultDir,
+    page,
+    limit: LIMIT,
   };
 
   const [favorites, deckUsage, pendingAsks] = await Promise.all([
@@ -57,33 +68,41 @@ export default async function SearchPage({
   ]);
   const pendingSet = new Set(pendingAsks);
 
-  let results: (GlobalSearchResult | AdvancedResult)[] = [];
+  let results: AdvancedResult[] = [];
+  let total = 0;
   const ran = hasAdvancedFilters(filters);
   if (ran) {
-    results = await advancedSearch(filters);
+    ({ results, total } = await advancedSearch(filters));
   }
 
-  const items: SearchResultItem[] = results.map((r) => {
-    const adv = 'typeLine' in r ? (r as AdvancedResult) : null;
-    return {
-      normalizedName: r.normalizedName,
-      name: r.name,
-      image: r.image,
-      owners: r.owners,
-      typeLine: adv?.typeLine ?? null,
-      cmc: adv?.cmc ?? null,
-      colorIdentity: adv?.colorIdentity ?? null,
-      rarity: adv?.rarity ?? null,
-      setCode: adv?.setCode ?? null,
-      priceUsd: adv?.priceUsd ?? null,
-      decksByOwner: ownerDecksMap(deckUsage[r.normalizedName] ?? []),
-      alreadyAsked: r.owners
-        .filter((o) => pendingSet.has(`${r.normalizedName}::${o.name}`))
-        .map((o) => o.name),
-      favorite: favorites.has(r.normalizedName),
-      advanced: Boolean(adv),
-    };
-  });
+  const items: SearchResultItem[] = results.map((r) => ({
+    normalizedName: r.normalizedName,
+    name: r.name,
+    image: r.image,
+    owners: r.owners,
+    typeLine: r.typeLine,
+    cmc: r.cmc,
+    colorIdentity: r.colorIdentity,
+    rarity: r.rarity,
+    setCode: r.setCode,
+    priceUsd: r.priceUsd,
+    decksByOwner: ownerDecksMap(deckUsage[r.normalizedName] ?? []),
+    alreadyAsked: r.owners
+      .filter((o) => pendingSet.has(`${r.normalizedName}::${o.name}`))
+      .map((o) => o.name),
+    favorite: favorites.has(r.normalizedName),
+    advanced: true,
+  }));
+
+  // Base URL for pagination links — all current params except page.
+  const baseUrlParams = new URLSearchParams();
+  if (rawQuery) baseUrlParams.set('q', rawQuery);
+  if (defaultSort !== 'name') baseUrlParams.set('sort', defaultSort);
+  if (defaultDir !== 'asc') baseUrlParams.set('dir', defaultDir);
+  if (defaultOwner !== 'anyone') baseUrlParams.set('owner', defaultOwner);
+  const baseUrl = `/search?${baseUrlParams}`;
+
+  const totalPages = Math.ceil(total / LIMIT);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -95,22 +114,35 @@ export default async function SearchPage({
         to focus search.
       </p>
 
-      <SearchPanel defaultQuery={rawQuery} />
+      <SearchPanel
+        defaultQuery={rawQuery}
+        defaultSort={defaultSort}
+        defaultDir={defaultDir}
+        defaultOwner={defaultOwner}
+        podMembers={POD_MEMBERS}
+        viewerName={viewer.name}
+      />
 
-      {ran && results.length === 0 && (
+      {ran && total === 0 && (
         <p className="mt-8 text-sm text-muted">
           Nothing in the pod matches those filters.
         </p>
       )}
 
-      {results.length > 0 && (
+      {total > 0 && (
         <>
           <p className="mt-6 text-xs text-muted">
-            {results.length} card{results.length === 1 ? '' : 's'}
-            {results.length >= 80 ? ' (showing first 80)' : ''}
+            {total.toLocaleString()} card{total === 1 ? '' : 's'}
+            {totalPages > 1 && (
+              <>
+                {' '}
+                &middot; page {page} of {totalPages}
+              </>
+            )}
             {' · '}click a card, then use ← → to browse
           </p>
           <SearchResults items={items} viewerName={viewer.name} />
+          <Pagination page={page} totalPages={totalPages} baseUrl={baseUrl} />
         </>
       )}
     </main>

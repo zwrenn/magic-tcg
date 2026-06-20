@@ -189,7 +189,7 @@ export function CollectionView({
         sort={sort}
         onSortChange={setSort}
         dir={dir}
-        onDirToggle={() => setDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+        onDirChange={setDir}
         deckFilter={deckFilter}
         onDeckFilterChange={setDeckFilter}
         favOnly={favOnly}
