@@ -23,6 +23,10 @@ export const POD_ANNOUNCEMENTS = {
 };
 
 const SCRYFALL_BASE = "https://api.scryfall.com";
+/** Cache tag for the Scryfall sets lookup, force-refreshed by the daily cron. */
+export const SETS_CACHE_TAG = "scryfall-sets";
+/** A pull counts as "new!" if imported within this many days. */
+const FRESH_DAYS = 7;
 const HEADERS = {
   Accept: "application/json;q=0.9,*/*;q=0.8",
   "User-Agent": "ThePod/1.0 (MTG playgroup collection tool; +https://github.com/zwrenn/magic-tcg)",
@@ -55,7 +59,8 @@ export async function getFeaturedSet(): Promise<FeaturedSet | null> {
   try {
     const res = await fetch(`${SCRYFALL_BASE}/sets`, {
       headers: HEADERS,
-      next: { revalidate: 86400 },
+      // 24h time-based refresh + a tag the daily cron can force-revalidate.
+      next: { revalidate: 86400, tags: [SETS_CACHE_TAG] },
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { data?: ScryfallSet[] };
@@ -104,6 +109,8 @@ export type FreshPull = {
   image: string | null;
   foil: boolean;
   owners: string[];
+  /** Imported within the last FRESH_DAYS — gets a "new!" glow. */
+  isNew: boolean;
 };
 
 /** Cards from a given set that the pod owns, newest-imported first. */
@@ -115,6 +122,7 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
       image: schema.cards.imageUri,
       owner: schema.users.name,
       foil: schema.collectionItems.foil,
+      importedAt: schema.collectionItems.importedAt,
     })
     .from(schema.collectionItems)
     .innerJoin(schema.cards, eq(schema.cards.id, schema.collectionItems.cardId))
@@ -122,14 +130,18 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
     .where(sql`lower(${schema.cards.setCode}) = ${setCode.toLowerCase()}`)
     .orderBy(desc(schema.collectionItems.importedAt));
 
+  const freshCutoff = Date.now() - FRESH_DAYS * 86400 * 1000;
+
   // Aggregate by card (rows are newest-first, so first sighting wins for order).
   const byCard = new Map<string, FreshPull>();
   for (const r of rows) {
+    const isNew = r.importedAt ? r.importedAt.getTime() >= freshCutoff : false;
     const existing = byCard.get(r.normalizedName);
     if (existing) {
       if (!existing.owners.includes(r.owner)) existing.owners.push(r.owner);
       if (!existing.image && r.image) existing.image = r.image;
       existing.foil = existing.foil || r.foil;
+      existing.isNew = existing.isNew || isNew;
     } else {
       byCard.set(r.normalizedName, {
         normalizedName: r.normalizedName,
@@ -137,6 +149,7 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
         image: r.image,
         foil: r.foil,
         owners: [r.owner],
+        isNew,
       });
     }
   }

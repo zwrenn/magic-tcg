@@ -110,27 +110,34 @@ export function PodNews({
               <ul className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
                 {pulls.map((p) => (
                   <li key={p.normalizedName} className="w-[88px] shrink-0">
-                    <CardZoomButton
-                      name={p.name}
-                      image={p.image}
-                      holo={p.foil}
-                      allowEdit={false}
-                      className="block w-full"
-                    >
-                      {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          loading="lazy"
-                          className={`aspect-[488/680] w-full rounded-lg border-2 border-[var(--border)] object-cover ${p.foil ? "foil-frame" : ""}`}
-                        />
-                      ) : (
-                        <span className="flex aspect-[488/680] w-full items-center justify-center rounded-lg border-2 border-[var(--border)] bg-surface-2 p-1 text-center text-[9px] text-muted">
-                          {p.name}
+                    <div className={`relative ${p.isNew ? "fresh-new" : ""}`}>
+                      {p.isNew && (
+                        <span className="pixel absolute -right-1 -top-1 z-10 rotate-6 rounded bg-[var(--pink)] px-1 text-[9px] font-bold text-white shadow">
+                          NEW!
                         </span>
                       )}
-                    </CardZoomButton>
+                      <CardZoomButton
+                        name={p.name}
+                        image={p.image}
+                        holo={p.foil}
+                        allowEdit={false}
+                        className="block w-full"
+                      >
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            loading="lazy"
+                            className={`aspect-[488/680] w-full rounded-lg border-2 border-[var(--border)] object-cover ${p.foil ? "foil-frame" : ""}`}
+                          />
+                        ) : (
+                          <span className="flex aspect-[488/680] w-full items-center justify-center rounded-lg border-2 border-[var(--border)] bg-surface-2 p-1 text-center text-[9px] text-muted">
+                            {p.name}
+                          </span>
+                        )}
+                      </CardZoomButton>
+                    </div>
                     <div className="mt-0.5 truncate text-center text-[10px] text-muted" title={`${p.name} — ${p.owners.join(", ")}`}>
                       {p.owners.join(", ")}
                     </div>
