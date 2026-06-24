@@ -120,7 +120,7 @@ export function PodNews({
                 Nobody&apos;s imported anything from {featured.name} yet — be the first!
               </p>
             ) : (
-              <ul className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <ul className="no-scrollbar flex gap-3 overflow-x-auto px-0.5 pb-1 pt-2.5">
                 {pulls.map((p, i) => (
                   <li key={p.normalizedName} className="w-[104px] shrink-0">
                     <button
@@ -130,7 +130,7 @@ export function PodNews({
                       className={`hover-pop relative block w-full rounded-xl ${p.isNew ? "fresh-new" : ""}`}
                     >
                       {p.isNew && (
-                        <span className="pixel blinky absolute -right-1.5 -top-1.5 z-10 rotate-6 rounded bg-[var(--pink)] px-1 text-[9px] font-bold text-white shadow">
+                        <span className="pixel blinky absolute right-1 top-1 z-10 rotate-6 rounded bg-[var(--pink)] px-1 text-[9px] font-bold text-white shadow">
                           NEW!
                         </span>
                       )}
