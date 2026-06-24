@@ -1,6 +1,7 @@
 import "server-only";
 import { desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { isBasicLand } from "./card-types";
 
 /**
  * Pod news shown on the home board. Edit `events` (and bump `version`) for your
@@ -109,11 +110,23 @@ export type FreshPull = {
   image: string | null;
   foil: boolean;
   owners: string[];
+  rarity: string | null;
+  /** Best price seen across owned copies (foil-aware), for ranking + display. */
+  price: number | null;
   /** Imported within the last FRESH_DAYS — gets a "new!" glow. */
   isNew: boolean;
 };
 
-/** Cards from a given set that the pod owns, newest-imported first. */
+const RARITY_RANK: Record<string, number> = {
+  bonus: 4, special: 4, mythic: 3, rare: 2, uncommon: 1, common: 0,
+};
+const rarityRank = (r: string | null) => RARITY_RANK[(r ?? "").toLowerCase()] ?? 0;
+
+/**
+ * The pod's "best hits" from a set: non-basic cards it owns, ranked by value
+ * then rarity (the chase cards first). Each card also flags `isNew` if a copy
+ * was imported recently.
+ */
 export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshPull[]> {
   const rows = await db
     .select({
@@ -122,6 +135,9 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
       image: schema.cards.imageUri,
       owner: schema.users.name,
       foil: schema.collectionItems.foil,
+      rarity: schema.cards.rarity,
+      priceUsd: schema.cards.pricesUsd,
+      priceUsdFoil: schema.cards.priceUsdFoil,
       importedAt: schema.collectionItems.importedAt,
     })
     .from(schema.collectionItems)
@@ -132,16 +148,18 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
 
   const freshCutoff = Date.now() - FRESH_DAYS * 86400 * 1000;
 
-  // Aggregate by card (rows are newest-first, so first sighting wins for order).
   const byCard = new Map<string, FreshPull>();
   for (const r of rows) {
+    if (isBasicLand(r.normalizedName)) continue; // skip basics — not "hits"
     const isNew = r.importedAt ? r.importedAt.getTime() >= freshCutoff : false;
+    const rowPrice = Number(r.foil && r.priceUsdFoil ? r.priceUsdFoil : r.priceUsd) || null;
     const existing = byCard.get(r.normalizedName);
     if (existing) {
       if (!existing.owners.includes(r.owner)) existing.owners.push(r.owner);
       if (!existing.image && r.image) existing.image = r.image;
       existing.foil = existing.foil || r.foil;
       existing.isNew = existing.isNew || isNew;
+      if (rowPrice && (existing.price == null || rowPrice > existing.price)) existing.price = rowPrice;
     } else {
       byCard.set(r.normalizedName, {
         normalizedName: r.normalizedName,
@@ -149,11 +167,21 @@ export async function getFreshPulls(setCode: string, limit = 16): Promise<FreshP
         image: r.image,
         foil: r.foil,
         owners: [r.owner],
+        rarity: r.rarity,
+        price: rowPrice,
         isNew,
       });
     }
   }
-  return [...byCard.values()].slice(0, limit);
+
+  return [...byCard.values()]
+    .sort(
+      (a, b) =>
+        (b.price ?? 0) - (a.price ?? 0) ||
+        rarityRank(b.rarity) - rarityRank(a.rarity) ||
+        a.name.localeCompare(b.name),
+    )
+    .slice(0, limit);
 }
 
 /** Stable id for "has this person seen the current news?" dismissal cookie. */

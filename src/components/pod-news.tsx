@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CardZoomButton } from "@/components/card-zoom";
+import { useMemo, useState } from "react";
+import { useCardZoom } from "@/components/card-zoom";
 import type { FeaturedSet, FreshPull } from "@/lib/news";
 
 type EventItem = { emoji: string; title: string; detail: string };
@@ -20,6 +20,17 @@ export function PodNews({
   seen: boolean;
 }) {
   const [open, setOpen] = useState(!seen);
+  const { openList } = useCardZoom();
+  const zoomList = useMemo(
+    () =>
+      pulls.map((p) => ({
+        name: p.name,
+        image: p.image,
+        key: p.normalizedName,
+        holo: p.foil,
+      })),
+    [pulls],
+  );
 
   function dismiss() {
     setOpen(false);
@@ -93,13 +104,15 @@ export function PodNews({
           </ul>
         )}
 
-        {/* Fresh pulls */}
+        {/* Fresh pulls — best hits */}
         {featured && (
           <div>
-            <div className="t-label mb-2">
-              ✨ Fresh from {featured.name}
+            <div className="t-label mb-2 flex flex-wrap items-baseline gap-x-2">
+              <span>✨ Best hits from {featured.name}</span>
               {pulls.length > 0 && (
-                <span className="text-muted"> · {pulls.length} in the pod</span>
+                <span className="font-normal normal-case tracking-normal text-muted">
+                  click a card · ← → to browse
+                </span>
               )}
             </div>
             {pulls.length === 0 ? (
@@ -107,39 +120,43 @@ export function PodNews({
                 Nobody&apos;s imported anything from {featured.name} yet — be the first!
               </p>
             ) : (
-              <ul className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-                {pulls.map((p) => (
-                  <li key={p.normalizedName} className="w-[88px] shrink-0">
-                    <div className={`relative ${p.isNew ? "fresh-new" : ""}`}>
+              <ul className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+                {pulls.map((p, i) => (
+                  <li key={p.normalizedName} className="w-[104px] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openList(zoomList, i)}
+                      title={`${p.name} — ${p.owners.join(", ")}`}
+                      className={`hover-pop relative block w-full rounded-xl ${p.isNew ? "fresh-new" : ""}`}
+                    >
                       {p.isNew && (
-                        <span className="pixel absolute -right-1 -top-1 z-10 rotate-6 rounded bg-[var(--pink)] px-1 text-[9px] font-bold text-white shadow">
+                        <span className="pixel blinky absolute -right-1.5 -top-1.5 z-10 rotate-6 rounded bg-[var(--pink)] px-1 text-[9px] font-bold text-white shadow">
                           NEW!
                         </span>
                       )}
-                      <CardZoomButton
-                        name={p.name}
-                        image={p.image}
-                        holo={p.foil}
-                        allowEdit={false}
-                        className="block w-full"
-                      >
-                        {p.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.image}
-                            alt={p.name}
-                            loading="lazy"
-                            className={`aspect-[488/680] w-full rounded-lg border-2 border-[var(--border)] object-cover ${p.foil ? "foil-frame" : ""}`}
-                          />
-                        ) : (
-                          <span className="flex aspect-[488/680] w-full items-center justify-center rounded-lg border-2 border-[var(--border)] bg-surface-2 p-1 text-center text-[9px] text-muted">
-                            {p.name}
-                          </span>
-                        )}
-                      </CardZoomButton>
-                    </div>
-                    <div className="mt-0.5 truncate text-center text-[10px] text-muted" title={`${p.name} — ${p.owners.join(", ")}`}>
-                      {p.owners.join(", ")}
+                      {p.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          loading="lazy"
+                          className={`aspect-[488/680] w-full rounded-xl border-2 border-[var(--border-strong)] object-cover shadow-md ${p.foil ? "foil-frame" : ""}`}
+                        />
+                      ) : (
+                        <span className="flex aspect-[488/680] w-full items-center justify-center rounded-xl border-2 border-[var(--border-strong)] bg-surface-2 p-1 text-center text-[10px] text-muted">
+                          {p.name}
+                        </span>
+                      )}
+                    </button>
+                    <div className="mt-1 flex items-center justify-between gap-1 px-0.5 text-[10px]">
+                      <span className="truncate text-muted" title={p.owners.join(", ")}>
+                        {p.owners.join(", ")}
+                      </span>
+                      {p.price != null && p.price >= 1 && (
+                        <span className="shrink-0 font-semibold text-good">
+                          ${p.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </span>
+                      )}
                     </div>
                   </li>
                 ))}
