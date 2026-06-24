@@ -76,7 +76,12 @@ export function PodNews({
         {featured && (
           <div className="flex items-center gap-3 rounded-xl border-2 border-[var(--border)] bg-surface-2 p-3">
             {featured.icon && (
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-white bg-white shadow">
+              // explicit white (not bg-white, which the dark theme overrides) so
+              // the black set symbol stays visible on every skin
+              <span
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-white shadow"
+                style={{ background: "#ffffff" }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={featured.icon} alt="" className="h-6 w-6" />
               </span>
