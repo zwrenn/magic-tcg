@@ -1,10 +1,5 @@
 import { requireUser } from '@/lib/auth';
-import {
-  searchUserCollection,
-  VALID_COLORS,
-  VALID_SORT_KEYS,
-  VALID_TYPES,
-} from '@/lib/search/collection';
+import { searchUserCollection, VALID_SORT_KEYS } from '@/lib/search/collection';
 import type { CollectionQueryOptions } from '@/lib/search/collection';
 
 const DEFAULT_LIMIT = 60;
@@ -14,18 +9,18 @@ export async function GET(req: Request) {
   const user = await requireUser();
   const { searchParams } = new URL(req.url);
 
-  const color = searchParams.get('color') ?? 'all';
-  const type = searchParams.get('type') ?? 'all';
   const sortBy = searchParams.get('sortBy') ?? 'name';
   const sortDir = searchParams.get('sortDir') ?? 'asc';
   const deckFilter = searchParams.get('deckFilter') ?? 'any';
+  const colorMode = searchParams.get('colorMode') ?? 'including';
+  const cmcOp = searchParams.get('cmcOp') ?? 'eq';
 
   if (
-    !VALID_COLORS.includes(color as never) ||
-    !VALID_TYPES.includes(type as never) ||
     !VALID_SORT_KEYS.includes(sortBy as never) ||
     !['asc', 'desc'].includes(sortDir) ||
-    !['any', 'in', 'out'].includes(deckFilter)
+    !['any', 'in', 'out'].includes(deckFilter) ||
+    !['including', 'exact', 'atmost'].includes(colorMode) ||
+    !['eq', 'lte', 'gte'].includes(cmcOp)
   ) {
     return Response.json(
       { error: 'Invalid filter parameters' },
@@ -44,10 +39,19 @@ export async function GET(req: Request) {
   const rawPage = parseInt(searchParams.get('page') ?? '1', 10);
   const page = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1;
 
+  const rawCmc = searchParams.get('cmc');
+  const cmcParsed = rawCmc ? parseFloat(rawCmc) : undefined;
+
   const options: CollectionQueryOptions = {
     q: searchParams.get('q') ?? '',
-    color: color as CollectionQueryOptions['color'],
-    type: type as CollectionQueryOptions['type'],
+    typeLine: searchParams.get('typeLine') ?? '',
+    colors: searchParams.get('colors') ?? '',
+    colorMode: colorMode as CollectionQueryOptions['colorMode'],
+    colorless: searchParams.get('colorless') === 'true',
+    rarity: searchParams.get('rarity') ?? '',
+    cmc:
+      cmcParsed != null && Number.isFinite(cmcParsed) ? cmcParsed : undefined,
+    cmcOp: cmcOp as CollectionQueryOptions['cmcOp'],
     set: searchParams.get('set') ?? 'all',
     sortBy: sortBy as CollectionQueryOptions['sortBy'],
     sortDir: sortDir as 'asc' | 'desc',

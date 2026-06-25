@@ -1,9 +1,15 @@
 import 'server-only';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { normalizeName } from '../normalize';
 import type { OwnerHolding } from '../matcher';
 import type { GlobalSearchResult } from './globalSearch';
+
+export const SORT_FIELDS = ['name', 'cmc', 'price'] as const;
+export type SortField = (typeof SORT_FIELDS)[number];
+
+export const SORT_DIRS = ['asc', 'desc'] as const;
+export type SortDir = (typeof SORT_DIRS)[number];
 
 export type AdvancedFilters = {
   name?: string;
@@ -16,7 +22,9 @@ export type AdvancedFilters = {
   cmcOp?: 'eq' | 'lte' | 'gte';
   /** "anyone" | a member name | "everyone" | "2" | "3" (≥N owners) */
   owner?: string;
-  sort?: 'name' | 'cmc' | 'price';
+  sort?: SortField;
+  sortDir?: SortDir;
+  page?: number;
   limit?: number;
 };
 
@@ -28,6 +36,11 @@ export type AdvancedResult = GlobalSearchResult & {
   rarity: string | null;
   setCode: string | null;
   priceUsd: string | null;
+};
+
+export type AdvancedSearchResponse = {
+  results: AdvancedResult[];
+  total: number;
 };
 
 const WUBRG = ['W', 'U', 'B', 'R', 'G'] as const;
@@ -46,20 +59,73 @@ export function hasAdvancedFilters(f: AdvancedFilters): boolean {
 }
 
 /**
+ * Builds a correlated SQL condition that restricts cards by ownership.
+ * All subqueries correlate on `cards.normalized_name` (the outer query's column).
+ * Returns undefined for "anyone" — the INNER JOIN with collection_items already
+ * guarantees ownership in that case.
+ */
+function buildOwnerCond(
+  owner: string | undefined
+): ReturnType<typeof sql> | undefined {
+  if (!owner || owner === 'anyone') return undefined;
+
+  if (owner === 'everyone') {
+    // Card must be owned by every player who has any collection entry.
+    return sql`(
+      SELECT COUNT(DISTINCT ci2.user_id)
+      FROM collection_items ci2
+      JOIN cards c2 ON c2.id = ci2.card_id
+      WHERE c2.normalized_name = cards.normalized_name
+    ) >= (SELECT COUNT(DISTINCT user_id) FROM collection_items)`;
+  }
+
+  const n = Number(owner);
+  if (!isNaN(n)) {
+    // Card must be owned by at least N distinct players.
+    return sql`(
+      SELECT COUNT(DISTINCT ci2.user_id)
+      FROM collection_items ci2
+      JOIN cards c2 ON c2.id = ci2.card_id
+      WHERE c2.normalized_name = cards.normalized_name
+    ) >= ${n}`;
+  }
+
+  // Card must be owned by a specific named player.
+  return sql`EXISTS (
+    SELECT 1
+    FROM collection_items ci2
+    JOIN cards c2 ON c2.id = ci2.card_id
+    JOIN users u2 ON u2.id = ci2.user_id
+    WHERE c2.normalized_name = cards.normalized_name
+      AND u2.name = ${owner}
+  )`;
+}
+
+/**
  * Scryfall-style search over the pod's combined collection.
  *
- * Like globalSearch, this is two-phase: first find candidate cards matching
- * the filters (up to 600 to give the owner filter room), then fetch ownership
- * for that set and apply the owner filter in JS — the owner constraint doesn't
- * translate cleanly to a single SQL WHERE clause.
+ * Two-query approach:
+ *   1. Inner query: DISTINCT ON (normalized_name) with all card-attribute filters
+ *      and correlated owner-filter subqueries applied — gives one representative
+ *      row per matching card, with deduplication preferring cards that have images.
+ *   2. Outer query: ORDER BY the requested sort field, LIMIT/OFFSET for the page.
+ *      A parallel COUNT(*) on the same inner query gives the total for pagination.
+ *   3. Ownership detail query: fetches the per-owner breakdown for only the
+ *      cards on the current page (not the whole result set).
  *
- * The "everyone" owner option requires knowing how many players have collections,
- * so a third query fetches the distinct user count from collection_items.
+ * All filtering and sorting is done in the database — JS is only responsible
+ * for assembling the final result shape.
  */
 export async function advancedSearch(
   f: AdvancedFilters
-): Promise<AdvancedResult[]> {
-  const limit = f.limit ?? 80;
+): Promise<AdvancedSearchResponse> {
+  const limit = f.limit ?? 40;
+  const page = Math.max(1, f.page ?? 1);
+  const offset = (page - 1) * limit;
+  const sort = f.sort ?? 'name';
+  const dir = f.sortDir ?? 'asc';
+
+  // ── Card attribute filter conditions ──────────────────────────────────────
   const conds = [] as ReturnType<typeof sql>[];
 
   if (f.name) {
@@ -68,13 +134,13 @@ export async function advancedSearch(
       conds.push(sql`${schema.cards.normalizedName} ILIKE ${'%' + n + '%'}`);
   }
   if (f.type) {
-    // Each word in the type string must appear somewhere in the type line.
     for (const word of f.type.trim().split(/\s+/).filter(Boolean)) {
       conds.push(sql`${schema.cards.typeLine} ILIKE ${'%' + word + '%'}`);
     }
   }
-  if (f.rarity)
+  if (f.rarity) {
     conds.push(sql`lower(${schema.cards.rarity}) = ${f.rarity.toLowerCase()}`);
+  }
   if (f.cmc != null && Number.isFinite(f.cmc)) {
     if (f.cmcOp === 'lte') conds.push(sql`${schema.cards.cmc} <= ${f.cmc}`);
     else if (f.cmcOp === 'gte')
@@ -82,8 +148,6 @@ export async function advancedSearch(
     else conds.push(sql`${schema.cards.cmc} = ${f.cmc}`);
   }
 
-  // colorIdentity is stored as a comma-joined letter string (e.g. "W,U,B").
-  // Colorless cards have an empty string or NULL.
   const ci = schema.cards.colorIdentity;
   if (f.colorless) {
     conds.push(sql`coalesce(${ci}, '') = ''`);
@@ -98,28 +162,29 @@ export async function advancedSearch(
     for (const c of WUBRG) {
       const has = sel.has(c);
       if (mode === 'including') {
-        // Card must contain each selected color; unselected colors are ignored.
         if (has) conds.push(sql`${ci} ILIKE ${'%' + c + '%'}`);
       } else if (mode === 'exact') {
-        // Card must contain selected colors and must NOT contain unselected ones.
         conds.push(
           has
             ? sql`${ci} ILIKE ${'%' + c + '%'}`
             : sql`${ci} NOT ILIKE ${'%' + c + '%'}`
         );
       } else {
-        // "at most": selected colors are optional, but unselected colors are forbidden.
+        // atmost: selected colors are optional, unselected are forbidden
         if (!has)
           conds.push(sql`coalesce(${ci}, '') NOT ILIKE ${'%' + c + '%'}`);
       }
     }
   }
 
-  const where = conds.length ? and(...conds) : undefined;
+  const ownerCond = buildOwnerCond(f.owner);
+  const allConds = ownerCond ? [...conds, ownerCond] : conds;
+  const where = allConds.length ? and(...allConds) : undefined;
 
-  // The inner join with collection_items ensures only owned cards are returned.
-  // selectDistinctOn deduplicates by name, preferring rows with a non-null image.
-  const candidates = await db
+  // ── Inner subquery: one row per card, image-preferring ────────────────────
+  // DISTINCT ON requires the first ORDER BY column to match the distinct key.
+  // The actual user-facing sort happens in the outer query.
+  const inner = db
     .selectDistinctOn([schema.cards.normalizedName], {
       normalizedName: schema.cards.normalizedName,
       name: schema.cards.name,
@@ -138,11 +203,50 @@ export async function advancedSearch(
     )
     .where(where)
     .orderBy(schema.cards.normalizedName, sql`${schema.cards.imageUri} is null`)
-    .limit(600);
+    .as('best_cards');
 
-  if (candidates.length === 0) return [];
+  // ── Outer ORDER BY ────────────────────────────────────────────────────────
+  const nameCol = dir === 'desc' ? desc(inner.name) : asc(inner.name);
+  type OrderTerm = ReturnType<typeof asc> | ReturnType<typeof sql>;
+  let orderBy: OrderTerm[];
+
+  switch (sort) {
+    case 'cmc':
+      orderBy = [
+        dir === 'desc'
+          ? sql`${inner.cmc} desc nulls last`
+          : sql`${inner.cmc} asc nulls last`,
+        asc(inner.name),
+      ];
+      break;
+    case 'price':
+      orderBy = [
+        dir === 'desc'
+          ? sql`${inner.priceUsd}::numeric desc nulls last`
+          : sql`${inner.priceUsd}::numeric asc nulls last`,
+        asc(inner.name),
+      ];
+      break;
+    default: // name
+      orderBy = [nameCol];
+  }
+
+  // ── Run paginated results + total count in parallel ───────────────────────
+  const [candidates, [countRow]] = await Promise.all([
+    db
+      .select()
+      .from(inner)
+      .orderBy(...orderBy)
+      .limit(limit)
+      .offset(offset),
+    db.select({ total: sql<number>`count(*)::int` }).from(inner),
+  ]);
+
+  const total = countRow?.total ?? 0;
+  if (candidates.length === 0) return { results: [], total };
+
+  // ── Ownership detail query (current page only) ────────────────────────────
   const names = candidates.map((c) => c.normalizedName);
-
   const ownership = await db
     .select({
       normalizedName: schema.cards.normalizedName,
@@ -163,47 +267,20 @@ export async function advancedSearch(
     ownersByCard.set(row.normalizedName, list);
   }
 
-  // "everyone" means every player who has any collection — queried separately
-  // since it's a count of distinct users, not something the card query knows.
-  const [{ n: playerCount } = { n: 0 }] = await db
-    .select({
-      n: sql<number>`count(distinct ${schema.collectionItems.userId})::int`,
-    })
-    .from(schema.collectionItems);
+  const results: AdvancedResult[] = candidates.map((c) => ({
+    normalizedName: c.normalizedName,
+    name: c.name,
+    image: c.image,
+    typeLine: c.typeLine,
+    cmc: c.cmc != null ? Number(c.cmc) : null,
+    colorIdentity: c.colorIdentity,
+    rarity: c.rarity,
+    setCode: c.setCode,
+    priceUsd: c.priceUsd,
+    owners: (ownersByCard.get(c.normalizedName) ?? []).sort(
+      (a, b) => b.qty - a.qty
+    ),
+  }));
 
-  const ownerFilter = (owners: OwnerHolding[]): boolean => {
-    const o = f.owner ?? 'anyone';
-    if (o === 'anyone') return owners.length > 0;
-    if (o === 'everyone') return owners.length >= Math.max(1, playerCount);
-    if (o === '2' || o === '3') return owners.length >= Number(o);
-    return owners.some((x) => x.name === o); // specific named member
-  };
-
-  const results: AdvancedResult[] = candidates
-    .map((c) => ({
-      normalizedName: c.normalizedName,
-      name: c.name,
-      image: c.image,
-      typeLine: c.typeLine,
-      cmc: c.cmc != null ? Number(c.cmc) : null, // Postgres numeric → string → number
-      colorIdentity: c.colorIdentity,
-      rarity: c.rarity,
-      setCode: c.setCode,
-      priceUsd: c.priceUsd,
-      owners: (ownersByCard.get(c.normalizedName) ?? []).sort(
-        (a, b) => b.qty - a.qty
-      ),
-    }))
-    .filter((r) => ownerFilter(r.owners));
-
-  const sort = f.sort ?? 'name';
-  results.sort((a, b) => {
-    if (sort === 'cmc')
-      return (a.cmc ?? 99) - (b.cmc ?? 99) || a.name.localeCompare(b.name);
-    if (sort === 'price')
-      return (Number(b.priceUsd) || 9999) - (Number(a.priceUsd) || 9999);
-    return a.name.localeCompare(b.name);
-  });
-
-  return results.slice(0, limit);
+  return { results, total };
 }

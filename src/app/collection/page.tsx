@@ -1,19 +1,50 @@
 import { requireUser } from '@/lib/auth';
-import { collectionTotals } from '@/lib/search/collection';
+import {
+  collectionTotals,
+  VALID_SORT_KEYS,
+  type SortKey,
+} from '@/lib/search/collection';
 import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
+import type { CollectionFilterInit } from './components/useCollectionFilters';
 import { CollectionView } from './components/CollectionView';
 import { AddCardPanel } from './components/AddCardPanel';
 import { ClearCollectionButton } from './components/ClearCollectionButton';
 import { SearchHotkey } from '@/components/search-hotkey';
 
-export default async function CollectionPage() {
+type SP = Record<string, string | string[] | undefined>;
+const one = (v: string | string[] | undefined) =>
+  (Array.isArray(v) ? v[0] : v) ?? '';
+
+export default async function CollectionPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
   const user = await requireUser();
-  const [totals, favorites, deckUsage] = await Promise.all([
+  const [totals, favorites, deckUsage, sp] = await Promise.all([
     collectionTotals(user.id),
     getFavorites(user.id),
     getDeckUsage(),
+    searchParams,
   ]);
+
+  const rawSort = one(sp.sort);
+  const rawDeck = one(sp.deck);
+  const initial: CollectionFilterInit = {
+    query: one(sp.q),
+    sort: VALID_SORT_KEYS.includes(rawSort as SortKey)
+      ? (rawSort as SortKey)
+      : 'name',
+    dir: one(sp.dir) === 'desc' ? 'desc' : 'asc',
+    favOnly: one(sp.fav) === '1',
+    deckFilter: (rawDeck === 'in' || rawDeck === 'out' ? rawDeck : 'any') as
+      | 'any'
+      | 'in'
+      | 'out',
+    set: one(sp.set) || 'all',
+    page: Math.max(1, parseInt(one(sp.page) || '1', 10) || 1),
+  };
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
@@ -57,6 +88,7 @@ export default async function CollectionPage() {
             userId={user.id}
             favorites={[...favorites]}
             deckUsage={deckUsage}
+            initial={initial}
           />
         </div>
       )}

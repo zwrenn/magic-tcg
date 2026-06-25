@@ -2,12 +2,6 @@
 
 import { Select } from '@/components/Select';
 import { Toggle } from '@/components/Toggle';
-import {
-  COLOR_BUCKETS,
-  TYPE_BUCKETS,
-  type ColorBucket,
-  type TypeBucket,
-} from '@/lib/card-types';
 import type { SortKey } from '@/lib/search/collection';
 
 type ViewMode = 'grid' | 'list';
@@ -18,74 +12,41 @@ interface SelectOption {
 }
 
 interface CollectionFiltersBarProps {
-  color: ColorBucket | 'all';
-  onColorChange: (v: ColorBucket | 'all') => void;
-  type: TypeBucket | 'all';
-  onTypeChange: (v: TypeBucket | 'all') => void;
-  set: string;
-  onSetChange: (v: string) => void;
   sort: SortKey;
   onSortChange: (v: SortKey) => void;
   dir: 'asc' | 'desc';
-  onDirToggle: () => void;
+  onDirChange: (v: 'asc' | 'desc') => void;
   deckFilter: 'any' | 'in' | 'out';
   onDeckFilterChange: (v: 'any' | 'in' | 'out') => void;
   favOnly: boolean;
   onFavOnlyToggle: () => void;
   view: ViewMode;
   onViewChange: (v: ViewMode) => void;
+  set: string;
+  onSetChange: (v: string) => void;
   setOptions: SelectOption[];
 }
 
 export function CollectionFiltersBar({
-  color,
-  onColorChange,
-  type,
-  onTypeChange,
-  set,
-  onSetChange,
   sort,
   onSortChange,
   dir,
-  onDirToggle,
+  onDirChange,
   deckFilter,
   onDeckFilterChange,
   favOnly,
   onFavOnlyToggle,
   view,
   onViewChange,
+  set,
+  onSetChange,
   setOptions,
 }: CollectionFiltersBarProps) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-      <button
-        onClick={onFavOnlyToggle}
-        className={`rounded-lg border px-3 py-1 font-medium transition ${
-          favOnly
-            ? 'border-warn bg-warn/15 text-warn'
-            : 'border-border bg-surface text-muted hover:text-foreground'
-        }`}
-      >
+      <Toggle active={favOnly} onClick={onFavOnlyToggle}>
         ★ Favorites
-      </button>
-      <Select
-        label="Color"
-        value={color}
-        onChange={(v) => onColorChange(v as ColorBucket | 'all')}
-        options={[
-          { value: 'all', label: 'All colors' },
-          ...COLOR_BUCKETS.map((c) => ({ value: c, label: c })),
-        ]}
-      />
-      <Select
-        label="Type"
-        value={type}
-        onChange={(v) => onTypeChange(v as TypeBucket | 'all')}
-        options={[
-          { value: 'all', label: 'All types' },
-          ...TYPE_BUCKETS.map((t) => ({ value: t, label: t })),
-        ]}
-      />
+      </Toggle>
       <Select
         label="Set"
         value={set}
@@ -116,13 +77,14 @@ export function CollectionFiltersBar({
           { value: 'price', label: 'Price' },
         ]}
       />
-      <button
-        onClick={onDirToggle}
-        title={dir === 'asc' ? 'Ascending' : 'Descending'}
-        className="rounded-lg border border-border bg-surface px-2 py-1 text-foreground hover:border-accent/60"
-      >
-        {dir === 'asc' ? '↑' : '↓'}
-      </button>
+      <div className="flex gap-1 rounded-lg bg-surface-2 p-1 text-xs">
+        <Toggle active={dir === 'asc'} onClick={() => onDirChange('asc')}>
+          ↑ Asc
+        </Toggle>
+        <Toggle active={dir === 'desc'} onClick={() => onDirChange('desc')}>
+          ↓ Desc
+        </Toggle>
+      </div>
       <div className="ml-auto flex gap-1 rounded-lg bg-surface-2 p-1 text-xs">
         <Toggle active={view === 'grid'} onClick={() => onViewChange('grid')}>
           Grid

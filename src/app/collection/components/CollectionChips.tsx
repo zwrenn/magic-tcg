@@ -1,52 +1,45 @@
 'use client';
 
 import { Chip } from '@/components/Chip';
-import type { ColorBucket, TypeBucket } from '@/lib/card-types';
-
-interface SelectOption {
-  value: string;
-  label: string;
-}
+import { QueryChips } from '@/components/QueryChips';
+import type { AdvancedSearchValues } from '@/lib/search/queryParser';
 
 interface CollectionChipsProps {
-  q: string;
-  onClearQ: () => void;
+  searchValues: AdvancedSearchValues;
+  onChangeSearchValues: (v: AdvancedSearchValues) => void;
   favOnly: boolean;
   onClearFavOnly: () => void;
-  color: ColorBucket | 'all';
-  onClearColor: () => void;
-  type: TypeBucket | 'all';
-  onClearType: () => void;
   set: string;
   onClearSet: () => void;
-  setOptions: SelectOption[];
+  setOptions: { value: string; label: string }[];
   onClearAll: () => void;
 }
 
 export function CollectionChips({
-  q,
-  onClearQ,
+  searchValues,
+  onChangeSearchValues,
   favOnly,
   onClearFavOnly,
-  color,
-  onClearColor,
-  type,
-  onClearType,
   set,
   onClearSet,
   setOptions,
   onClearAll,
 }: CollectionChipsProps) {
-  const hasActiveFilter =
-    !!q || favOnly || color !== 'all' || type !== 'all' || set !== 'all';
-  if (!hasActiveFilter) return null;
+  const { name, typeLine, colors, colorless, rarity, cmc } = searchValues;
+  const hasQueryChips = !!(
+    name ||
+    typeLine ||
+    colors.length ||
+    colorless ||
+    rarity ||
+    cmc
+  );
+  if (!hasQueryChips && !favOnly && set === 'all') return null;
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
-      {q && <Chip label={`"${q}"`} onClear={onClearQ} />}
+      <QueryChips values={searchValues} onChange={onChangeSearchValues} />
       {favOnly && <Chip label="★ Favorites" onClear={onClearFavOnly} />}
-      {color !== 'all' && <Chip label={color} onClear={onClearColor} />}
-      {type !== 'all' && <Chip label={type} onClear={onClearType} />}
       {set !== 'all' && (
         <Chip
           label={setOptions.find((s) => s.value === set)?.label ?? set}

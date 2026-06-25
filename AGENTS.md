@@ -34,4 +34,9 @@ If you are doing direct work in a file and it has an "incorrect" name per this c
 ## File length and component reuse
 
 - Aim to keep files under ~250 lines. If a file is growing beyond that, look for logical units to extract as separate components or hooks.
-- Before writing a new primitive (button, chip, select, toggle, etc.), scan `src/components/` for an existing one. Prefer extending an existing component over creating a duplicate.
+- **Never write a raw HTML primitive** (`<select>`, `<button>`, `<input type="checkbox">`, chip/badge markup, pagination controls) without first running `ls src/components/` and reading any plausible match. Known shared components that **must** be used when applicable:
+  - `Select` — any labeled dropdown/select
+  - `Toggle` — any active/inactive button or binary switch
+  - `Chip` — any removable filter tag or badge
+  - `Pagination` — any page-forward/back controls
+    If a suitable component exists, use it. If the existing component needs a small addition to cover the new use case, extend it rather than duplicating it.
