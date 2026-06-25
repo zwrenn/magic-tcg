@@ -95,7 +95,7 @@ function SyntaxGuide() {
           <Row
             kw="owner:"
             ex="owner:anyone"
-            meaning="Ownership filter (anyone / everyone / 2 / 3 / name)"
+            meaning="Ownership filter (anyone / name)"
           />
           <Row
             kw="sort:"

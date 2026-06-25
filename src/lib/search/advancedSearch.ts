@@ -5,6 +5,12 @@ import { normalizeName } from '../normalize';
 import type { OwnerHolding } from '../matcher';
 import type { GlobalSearchResult } from './globalSearch';
 
+export const SORT_FIELDS = ['name', 'cmc', 'price'] as const;
+export type SortField = (typeof SORT_FIELDS)[number];
+
+export const SORT_DIRS = ['asc', 'desc'] as const;
+export type SortDir = (typeof SORT_DIRS)[number];
+
 export type AdvancedFilters = {
   name?: string;
   type?: string; // matched word-by-word against the type line
@@ -16,8 +22,8 @@ export type AdvancedFilters = {
   cmcOp?: 'eq' | 'lte' | 'gte';
   /** "anyone" | a member name | "everyone" | "2" | "3" (≥N owners) */
   owner?: string;
-  sort?: 'name' | 'cmc' | 'price';
-  sortDir?: 'asc' | 'desc';
+  sort?: SortField;
+  sortDir?: SortDir;
   page?: number;
   limit?: number;
 };

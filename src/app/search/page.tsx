@@ -2,9 +2,12 @@ import { requireUser } from '@/lib/auth';
 import {
   advancedSearch,
   hasAdvancedFilters,
+  SORT_FIELDS,
+  SORT_DIRS,
   type AdvancedFilters,
   type AdvancedResult,
 } from '@/lib/search/advancedSearch';
+import { coerceParam } from '@/lib/params';
 import { getFavorites } from '@/lib/favorites';
 import { getDeckUsage } from '@/lib/decks';
 import { getPendingOutgoingKeys } from '@/lib/requests';
@@ -38,8 +41,8 @@ export default async function SearchPage({
   const sp = await searchParams;
 
   const rawQuery = one(sp.q);
-  const defaultSort = one(sp.sort) || 'name';
-  const defaultDir = (one(sp.dir) || 'asc') as 'asc' | 'desc';
+  const defaultSort = coerceParam(one(sp.sort), SORT_FIELDS, 'name');
+  const defaultDir = coerceParam(one(sp.dir), SORT_DIRS, 'asc');
   const defaultOwner = one(sp.owner) || 'anyone';
   const page = Math.max(1, parseInt(one(sp.page) || '1', 10) || 1);
 
@@ -55,7 +58,7 @@ export default async function SearchPage({
     cmc: parsed.cmc ? Number(parsed.cmc) : undefined,
     cmcOp: parsed.cmcOp,
     owner: defaultOwner,
-    sort: defaultSort as AdvancedFilters['sort'],
+    sort: defaultSort,
     sortDir: defaultDir,
     page,
     limit: LIMIT,
