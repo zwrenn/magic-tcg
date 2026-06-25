@@ -166,7 +166,7 @@ export function CollectionView({
         {Array.from({ length: 24 }).map((_, i) => (
           <li
             key={i}
-            className="aspect-488/680 animate-pulse rounded-lg bg-surface-2"
+            className="aspect-[488/680] animate-pulse rounded-lg bg-surface-2"
           />
         ))}
       </ul>

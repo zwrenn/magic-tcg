@@ -13,12 +13,14 @@ export async function GET(req: Request) {
   const sortDir = searchParams.get('sortDir') ?? 'asc';
   const deckFilter = searchParams.get('deckFilter') ?? 'any';
   const colorMode = searchParams.get('colorMode') ?? 'including';
+  const cmcOp = searchParams.get('cmcOp') ?? 'eq';
 
   if (
     !VALID_SORT_KEYS.includes(sortBy as never) ||
     !['asc', 'desc'].includes(sortDir) ||
     !['any', 'in', 'out'].includes(deckFilter) ||
-    !['including', 'exact', 'atmost'].includes(colorMode)
+    !['including', 'exact', 'atmost'].includes(colorMode) ||
+    !['eq', 'lte', 'gte'].includes(cmcOp)
   ) {
     return Response.json(
       { error: 'Invalid filter parameters' },
@@ -49,8 +51,7 @@ export async function GET(req: Request) {
     rarity: searchParams.get('rarity') ?? '',
     cmc:
       cmcParsed != null && Number.isFinite(cmcParsed) ? cmcParsed : undefined,
-    cmcOp: (searchParams.get('cmcOp') ??
-      'eq') as CollectionQueryOptions['cmcOp'],
+    cmcOp: cmcOp as CollectionQueryOptions['cmcOp'],
     set: searchParams.get('set') ?? 'all',
     sortBy: sortBy as CollectionQueryOptions['sortBy'],
     sortDir: sortDir as 'asc' | 'desc',

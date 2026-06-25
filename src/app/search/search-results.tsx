@@ -156,7 +156,7 @@ export function SearchResults({
                     className="w-full rounded-lg border border-border object-cover transition group-hover:brightness-110"
                   />
                 ) : (
-                  <span className="grid aspect-488/680 w-full place-items-center rounded-lg border border-border bg-surface-2 text-[8px] text-muted">
+                  <span className="grid aspect-[488/680] w-full place-items-center rounded-lg border border-border bg-surface-2 text-[8px] text-muted">
                     {r.name}
                   </span>
                 )}

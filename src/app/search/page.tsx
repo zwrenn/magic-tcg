@@ -103,7 +103,8 @@ export default async function SearchPage({
   if (defaultSort !== 'name') baseUrlParams.set('sort', defaultSort);
   if (defaultDir !== 'asc') baseUrlParams.set('dir', defaultDir);
   if (defaultOwner !== 'anyone') baseUrlParams.set('owner', defaultOwner);
-  const baseUrl = `/search?${baseUrlParams}`;
+  const baseUrlQs = baseUrlParams.toString();
+  const baseUrl = baseUrlQs ? `/search?${baseUrlQs}` : '/search';
 
   const totalPages = Math.ceil(total / LIMIT);
 
