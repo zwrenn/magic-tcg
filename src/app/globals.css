@@ -461,6 +461,13 @@ h3 {
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
 }
 
+/* "New!" pull glow — soft pulsing halo on freshly imported cards. */
+@keyframes fresh-glow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,121,176,0.0), 0 0 8px rgba(255,121,176,0.5); }
+  50% { box-shadow: 0 0 0 2px rgba(255,121,176,0.55), 0 0 16px rgba(255,121,176,0.85); }
+}
+.fresh-new { border-radius: 10px; animation: fresh-glow 1.8s ease-in-out infinite; }
+
 /* Blinkie badge flash. */
 @keyframes blink {
   0%,
