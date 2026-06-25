@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { SearchInput } from '@/components/SearchInput';
 import { Select } from '@/components/Select';
 import { Toggle } from '@/components/Toggle';
-import { parseQuery, serializeQuery } from '@/lib/search/queryParser';
+import { Chip } from '@/components/Chip';
+import { QueryChips } from '@/components/QueryChips';
+import {
+  parseQuery,
+  serializeQuery,
+  type AdvancedSearchValues,
+} from '@/lib/search/queryParser';
 
 const SORT_OPTIONS = [
   { value: 'name', label: 'Name' },
@@ -73,6 +79,25 @@ export function SearchPanel({
     router.push(buildUrl(cleanQuery, nextSort, dir, nextOwner));
   }
 
+  // Chips derive from the current URL's query string (server-rendered, always in sync).
+  const parsedQuery = parseQuery(defaultQuery);
+
+  function handleChipChange(updated: AdvancedSearchValues) {
+    const q = serializeQuery({ ...updated, sort: undefined, owner: undefined });
+    router.push(buildUrl(q, sort, dir, owner));
+  }
+
+  const { name, typeLine, colors, colorless, rarity, cmc } = parsedQuery;
+  const hasQueryChips = !!(
+    name ||
+    typeLine ||
+    colors.length ||
+    colorless ||
+    rarity ||
+    cmc
+  );
+  const showChips = hasQueryChips || owner !== 'anyone';
+
   return (
     <div className="mt-5 space-y-3">
       <SearchInput
@@ -120,6 +145,20 @@ export function SearchPanel({
           options={ownerOptions}
         />
       </div>
+      {showChips && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <QueryChips values={parsedQuery} onChange={handleChipChange} />
+          {owner !== 'anyone' && (
+            <Chip
+              label={`Owner: ${ownerOptions.find((o) => o.value === owner)?.label ?? owner}`}
+              onClear={() => {
+                setOwner('anyone');
+                router.push(buildUrl(defaultQuery, sort, dir, 'anyone'));
+              }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

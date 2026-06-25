@@ -44,16 +44,9 @@ export function CollectionFiltersBar({
 }: CollectionFiltersBarProps) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-      <button
-        onClick={onFavOnlyToggle}
-        className={`rounded-lg border px-3 py-1 font-medium transition ${
-          favOnly
-            ? 'border-warn bg-warn/15 text-warn'
-            : 'border-border bg-surface text-muted hover:text-foreground'
-        }`}
-      >
+      <Toggle active={favOnly} onClick={onFavOnlyToggle}>
         ★ Favorites
-      </button>
+      </Toggle>
       <Select
         label="Set"
         value={set}

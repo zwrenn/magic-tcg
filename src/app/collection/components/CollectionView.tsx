@@ -10,9 +10,9 @@ import type {
   CollectionQueryResult,
   CollectionRow,
 } from '@/lib/search/collection';
-import type { DeckUsage } from './useCollectionFilters';
+import type { DeckUsage, CollectionFilterInit } from './useCollectionFilters';
 import { useCollectionFilters } from './useCollectionFilters';
-import { parseQuery, serializeQuery } from '@/lib/search/queryParser';
+import { serializeQuery } from '@/lib/search/queryParser';
 import { SearchInput } from '@/components/SearchInput';
 import { CollectionFiltersBar } from './CollectionFiltersBar';
 import { CollectionChips } from './CollectionChips';
@@ -28,6 +28,7 @@ interface CollectionViewProps {
   userId: number;
   favorites: string[];
   deckUsage?: DeckUsage;
+  initial: CollectionFilterInit;
 }
 
 const LIMIT = 60;
@@ -38,12 +39,11 @@ export function CollectionView({
   userId,
   favorites,
   deckUsage = {},
+  initial,
 }: CollectionViewProps) {
   const [view, setView] = useState<ViewMode>('grid');
   const [favs, setFavs] = useState<Set<string>>(() => new Set(favorites));
   const [zoom, setZoom] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
-  const [formKey, setFormKey] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -59,6 +59,7 @@ export function CollectionView({
 
   const {
     searchValues,
+    submitQuery,
     setSearchValues,
     set,
     setSet,
@@ -70,13 +71,10 @@ export function CollectionView({
     setFavOnly,
     deckFilter,
     setDeckFilter,
+    page,
+    setPage,
     clearAll,
-  } = useCollectionFilters();
-
-  // Reset to page 1 whenever any filter or sort changes.
-  useEffect(() => {
-    setPage(1);
-  }, [searchValues, set, sort, dir, favOnly, deckFilter]);
+  } = useCollectionFilters(initial);
 
   const { data, isPending, isFetching } = useQuery<CollectionQueryResult>({
     queryKey: [
@@ -179,9 +177,9 @@ export function CollectionView({
     <>
       <div ref={topRef} className="mb-4">
         <SearchInput
-          key={formKey}
+          key={serializeQuery(searchValues)}
           defaultQuery={serializeQuery(searchValues)}
-          onSubmit={(raw) => setSearchValues(parseQuery(raw))}
+          onSubmit={submitQuery}
           submitLabel="Search my collection"
         />
       </div>
@@ -193,7 +191,7 @@ export function CollectionView({
         deckFilter={deckFilter}
         onDeckFilterChange={setDeckFilter}
         favOnly={favOnly}
-        onFavOnlyToggle={() => setFavOnly((f) => !f)}
+        onFavOnlyToggle={() => setFavOnly(!favOnly)}
         view={view}
         onViewChange={pickView}
         set={set}
@@ -202,19 +200,13 @@ export function CollectionView({
       />
       <CollectionChips
         searchValues={searchValues}
-        onChangeSearchValues={(v) => {
-          setSearchValues(v);
-          setFormKey((k) => k + 1);
-        }}
+        onChangeSearchValues={setSearchValues}
         favOnly={favOnly}
         onClearFavOnly={() => setFavOnly(false)}
         set={set}
         onClearSet={() => setSet('all')}
         setOptions={setOptions}
-        onClearAll={() => {
-          clearAll();
-          setFormKey((k) => k + 1);
-        }}
+        onClearAll={clearAll}
       />
       <p className="mb-3 text-xs text-muted">
         {total.toLocaleString()} card{total === 1 ? '' : 's'}
