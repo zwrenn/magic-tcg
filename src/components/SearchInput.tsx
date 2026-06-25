@@ -20,7 +20,7 @@ export function SearchInput({
   return (
     <div className="space-y-2">
       <form action={(fd: FormData) => onSubmit((fd.get('q') as string) ?? '')}>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             name="q"
             defaultValue={defaultQuery ?? ''}
