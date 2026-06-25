@@ -110,7 +110,9 @@ export function parseQuery(query: string): AdvancedSearchValues {
         if (val.toLowerCase() === 'c') {
           // `id:c` is the conventional way to filter for colorless
           result.colorless = true;
+          result.colors = [];
         } else {
+          result.colorless = false;
           // Deduplicate and filter to valid WUBRG letters
           result.colors = [
             ...new Set(
